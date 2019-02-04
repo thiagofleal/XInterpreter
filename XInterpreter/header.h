@@ -3,6 +3,12 @@
 
 #include <wchar.h>
 
+#if (defined __cplusplus || defined __GNUC_GNU_INLINE__)
+#   define INLINE inline
+#else
+#   define INLINE
+#endif // defined
+
 #define True 0X1
 #define False 0X0
 
@@ -38,7 +44,7 @@ enum type_token{
     tok_identifier = 200,
     tok_constant = 0,
     tok_string = 30,
-    tok_pontuation = 10,
+    tok_punctuation = 10,
     tok_operator = 20,
     tok_end = -1
 };
@@ -91,7 +97,7 @@ enum key_words{
 
 typedef struct{
     int type;
-    string_t value;
+    wstring_t value;
     int intern;
     int line;
     string_t file;
@@ -149,6 +155,11 @@ enum operator_types{
     *   @   at
     *   #   fence
     *   $   dollar
+    *   &   ampersand
+    *   |   pipe
+    *   ~   tilde
+    *   ?   query
+    *   ??  double query
     *   <<  double left
     *   >>  double right
     */
@@ -156,6 +167,11 @@ enum operator_types{
     op_at,
     op_fence,
     op_dollar,
+    op_ampersand,
+    op_pipe,
+    op_tilde,
+    op_query,
+    op_double_query,
     op_double_left,
     op_double_right,
     /*
@@ -194,6 +210,10 @@ enum operator_types{
     op_near,
     op_not_near,
     op_near_or_identical,
+    op_larger,
+    op_larger_or_equal,
+    op_less,
+    op_less_or_equal,
     /*
     *   Arithmetic
     *
@@ -217,11 +237,13 @@ enum operator_types{
     *   Element access
     *
     *   .   dot
+    *   ?.  query dot
     *   [   bracket open
     *   ]   bracket close
     */
     element_access_operators,
     op_dot,
+    op_query_dot,
     op_bracket_open,
     op_bracket_close
 };
