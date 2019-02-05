@@ -1,10 +1,16 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "header.h"
 #include "util/util.h"
 
+token_t *token;
+
+static string_t pfile;
 static wstring_t prog;
+
+static list identifiers = NULL;
 
 wchar_t getCharacter(void){
     wchar_t ret;
@@ -44,6 +50,24 @@ wchar_t getCharacter(void){
         }
     }
     return * prog ++;
+}
+
+static int getLine(wstring_t origin){
+    static int line = 1;
+    static wstring_t current = NULL;
+
+    if(origin){
+        current = origin;
+        line = 1;
+    }
+
+    for(; current != prog; current ++){
+        if(* current == L'\n'){
+            ++ line;
+        }
+    }
+
+    return line;
 }
 
 static wstring_t key_words[] = {
@@ -95,19 +119,21 @@ static id_t keyWord(wstring_t word){
     return -1;
 }
 
-token_t getToken(void){
+static token_t getToken(void){
     token_t ret = {};
     wchar_t wstr[2000] = L"";
     wstring_t pwstr = wstr;
-    static list identifiers = NULL;
 
     if(!identifiers){
         identifiers = new_list();
     }
 
+    ret.file = pfile;
+
     /* Ignore white spaces */
-    while(iswspace(* prog))
+    while(iswspace(* prog)){
         ++ prog;
+    }
 
     /* Ignore commentaries */
     if(* prog == L'/'){
@@ -116,12 +142,15 @@ token_t getToken(void){
             do{
                 while(* ++ prog != L'*');
             }while(* ++ prog != L'/');
+            return getToken();
         }
         else if(* (prog + 1) == L'/'){
             while(* ++ prog != L'\n');
+            return getToken();
         }
-        return getToken();
     }
+
+    ret.line = getLine(NULL);
 
     /* End of program */
     if(! * prog){
@@ -185,16 +214,16 @@ token_t getToken(void){
             case L'=':
                 switch(* prog ++){
                     case L'>':
-                        ret.value = L"=>";
+                        ret.value = new_wstring(L"=>");
                         ret.intern = op_arrow;
                         return ret;
                     case L'=':
-                        ret.value = L"==";
+                        ret.value = new_wstring(L"==");
                         ret.intern = op_equal;
                         return ret;
                     default:
                         -- prog;
-                        ret.value = L"=";
+                        ret.value = new_wstring(L"=");
                         ret.intern = op_assignment;
                         return ret;
                 }
@@ -203,16 +232,16 @@ token_t getToken(void){
             case L'+':
                 switch(* prog ++){
                     case L'+':
-                        ret.value = L"++";
+                        ret.value = new_wstring(L"++");
                         ret.intern = op_increment;
                         return ret;
                     case L'=':
-                        ret.value = L"+=";
+                        ret.value = new_wstring(L"+=");
                         ret.intern = op_addition_assignment;
                         return ret;
                     default:
                         -- prog;
-                        ret.value = L"+";
+                        ret.value = new_wstring(L"+");
                         ret.intern = op_addition;
                         return ret;
                 }
@@ -221,20 +250,20 @@ token_t getToken(void){
             case L'-':
                 switch(* prog ++){
                     case L'-':
-                        ret.value = L"--";
+                        ret.value = new_wstring(L"--");
                         ret.intern = op_decrement;
                         return ret;
                     case L'=':
-                        ret.value = L"-=";
+                        ret.value = new_wstring(L"-=");
                         ret.intern = op_subtraction_assignment;
                         return ret;
                     case L'>':
-                        ret.value = L"->";
+                        ret.value = new_wstring(L"->");
                         ret.intern = op_if_then;
                         return ret;
                     default:
                         -- prog;
-                        ret.value = L"-";
+                        ret.value = new_wstring(L"-");
                         ret.intern = op_subtraction;
                         return ret;
                 }
@@ -243,12 +272,12 @@ token_t getToken(void){
             case L'*':
                 switch(* prog ++){
                     case L'=':
-                        ret.value = L"*=";
+                        ret.value = new_wstring(L"*=");
                         ret.intern = op_multiply_assignment;
                         return ret;
                     default:
                         -- prog;
-                        ret.value = L"*";
+                        ret.value = new_wstring(L"*");
                         ret.intern = op_multiply;
                         return ret;
                 }
@@ -257,12 +286,12 @@ token_t getToken(void){
             case L'/':
                 switch(* prog ++){
                     case L'=':
-                        ret.value = L"/=";
+                        ret.value = new_wstring(L"/=");
                         ret.intern = op_division_assignment;
                         return ret;
                     default:
                         -- prog;
-                        ret.value = L"/";
+                        ret.value = new_wstring(L"/");
                         ret.intern = op_division;
                         return ret;
                 }
@@ -271,12 +300,12 @@ token_t getToken(void){
             case L'%':
                 switch(* prog ++){
                     case L'=':
-                        ret.value = L"%=";
+                        ret.value = new_wstring(L"%=");
                         ret.intern = op_module_assignment;
                         return ret;
                     default:
                         -- prog;
-                        ret.value = L"%";
+                        ret.value = new_wstring(L"%");
                         ret.intern = op_module;
                         return ret;
                 }
@@ -285,12 +314,12 @@ token_t getToken(void){
             case L'^':
                 switch(* prog ++){
                     case L'=':
-                        ret.value = L"^=";
+                        ret.value = new_wstring(L"^=");
                         ret.intern = op_pow_assignment;
                         return ret;
                     default:
                         -- prog;
-                        ret.value = L"^";
+                        ret.value = new_wstring(L"^");
                         ret.intern = op_pow;
                         return ret;
                 }
@@ -299,12 +328,12 @@ token_t getToken(void){
             case L'\\':
                 switch(* prog ++){
                     case L'=':
-                        ret.value = L"\\=";
+                        ret.value = new_wstring(L"\\=");
                         ret.intern = op_radix_assignment;
                         return ret;
                     default:
                         -- prog;
-                        ret.value = L"\\";
+                        ret.value = new_wstring(L"\\");
                         ret.intern = op_radix;
                         return ret;
                 }
@@ -313,16 +342,16 @@ token_t getToken(void){
             case L'>':
                 switch(* prog ++){
                     case L'=':
-                        ret.value = L">=";
+                        ret.value = new_wstring(L">=");
                         ret.intern = op_larger_or_equal;
                         return ret;
                     case L'>':
-                        ret.value = L">>";
+                        ret.value = new_wstring(L">>");
                         ret.intern = op_double_right;
                         return ret;
                     default:
                         -- prog;
-                        ret.value = L">";
+                        ret.value = new_wstring(L">");
                         ret.intern = op_larger;
                         return ret;
                 }
@@ -331,20 +360,20 @@ token_t getToken(void){
             case L'<':
                 switch(* prog ++){
                     case L'=':
-                        ret.value = L"<=";
+                        ret.value = new_wstring(L"<=");
                         ret.intern = op_less_or_equal;
                         return ret;
                     case L'<':
-                        ret.value = L"<<";
+                        ret.value = new_wstring(L"<<");
                         ret.intern = op_double_left;
                         return ret;
                     case L'>':
-                        ret.value = L"<>";
+                        ret.value = new_wstring(L"<>");
                         ret.intern = op_only_if;
                         return ret;
                     default:
                         -- prog;
-                        ret.value = L"<";
+                        ret.value = new_wstring(L"<");
                         ret.intern = op_less;
                         return ret;
                 }
@@ -353,12 +382,12 @@ token_t getToken(void){
             case L'&':
                 switch(* prog ++){
                     case L'&':
-                        ret.value = L"&&";
+                        ret.value = new_wstring(L"&&");
                         ret.intern = op_and;
                         return ret;
                     default:
                         -- prog;
-                        ret.value = L"&";
+                        ret.value = new_wstring(L"&");
                         ret.intern = op_ampersand;
                         return ret;
                 }
@@ -367,16 +396,16 @@ token_t getToken(void){
             case L'|':
                 switch(* prog ++){
                     case L'|':
-                        ret.value = L"||";
+                        ret.value = new_wstring(L"||");
                         ret.intern = op_or;
                         return ret;
                     case L'&':
-                        ret.value = L"|&";
+                        ret.value = new_wstring(L"|&");
                         ret.intern = op_xor;
                         return ret;
                     default:
                         -- prog;
-                        ret.value = L"|";
+                        ret.value = new_wstring(L"|");
                         ret.intern = op_pipe;
                         return ret;
                 }
@@ -385,20 +414,20 @@ token_t getToken(void){
             case L'!':
                 switch(* prog ++){
                     case L'!':
-                        ret.value = L"!!";
+                        ret.value = new_wstring(L"!!");
                         ret.intern = op_negative_assignment;
                         return ret;
                     case L'=':
-                        ret.value = L"!=";
+                        ret.value = new_wstring(L"!=");
                         ret.intern = op_different;
                         return ret;
                     case L'~':
-                        ret.value = L"!~";
+                        ret.value = new_wstring(L"!~");
                         ret.intern = op_near_or_identical;
                         return ret;
                     default:
                         -- prog;
-                        ret.value = L"!";
+                        ret.value = new_wstring(L"!");
                         ret.intern = op_not;
                         return ret;
                 }
@@ -407,16 +436,16 @@ token_t getToken(void){
             case L'~':
                 switch(* prog ++){
                     case L'~':
-                        ret.value = L"~~";
+                        ret.value = new_wstring(L"~~");
                         ret.intern = op_near;
                         return ret;
                     case L'=':
-                        ret.value = L"~=";
+                        ret.value = new_wstring(L"~=");
                         ret.intern = op_near_or_identical;
                         return ret;
                     default:
                         -- prog;
-                        ret.value = L"~";
+                        ret.value = new_wstring(L"~");
                         ret.intern = op_tilde;
                         return ret;
                 }
@@ -425,48 +454,48 @@ token_t getToken(void){
             case L'?':
                 switch(* prog ++){
                     case L'?':
-                        ret.value = L"??";
+                        ret.value = new_wstring(L"??");
                         ret.intern = op_double_query;
                         return ret;
                     case L'.':
-                        ret.value = L"?.";
+                        ret.value = new_wstring(L"?.");
                         ret.intern = op_query_dot;
                         return ret;
                     default:
                         -- prog;
-                        ret.value = L"?";
+                        ret.value = new_wstring(L"?");
                         ret.intern = op_query;
                         return ret;
                 }
                 break;
 
             case L'.':
-                ret.value = L".";
+                ret.value = new_wstring(L".");
                 ret.intern = op_dot;
                 return ret;
 
             case L'@':
-                ret.value = L"@";
+                ret.value = new_wstring(L"@");
                 ret.intern = op_at;
                 return ret;
 
             case L'#':
-                ret.value = L"#";
+                ret.value = new_wstring(L"#");
                 ret.intern = op_fence;
                 return ret;
 
             case L'$':
-                ret.value = L"$";
+                ret.value = new_wstring(L"$");
                 ret.intern = op_dollar;
                 return ret;
 
             case L'[':
-                ret.value = L"[";
+                ret.value = new_wstring(L"[");
                 ret.intern = op_bracket_open;
                 return ret;
 
             case L']':
-                ret.value = L"]";
+                ret.value = new_wstring(L"]");
                 ret.intern = op_bracket_close;
                 return ret;
         }
@@ -484,9 +513,10 @@ token_t getToken(void){
     }
     else{
         ret.type = tok_identifier;
-        while((ret.intern = list_search(identifiers, wstr, wcslen(wstr))) == -1){
+        while((ret.intern = list_search(identifiers, wstr, wcslen(wstr) + sizeof(wchar_t))) == -1){
             list_add(identifiers, new_wstring(wstr));
         }
+        ret.intern += tok_identifier;
     }
 
     return ret;
@@ -494,4 +524,29 @@ token_t getToken(void){
 
 INLINE void registerKeyWord(int index, wstring_t value){
     key_words[index] = value;
+}
+
+void initTokens(string_t file, wstring_t content){
+    register int i, count;
+    token_t tok;
+
+    pfile = file;
+    prog = content;
+    getLine(prog);
+
+    for(count = 0, tok = getToken(); tok.type != tok_end; count++){
+        if(tok.value)
+            free(tok.value);
+        tok = getToken();
+    }
+
+    prog = content;
+    getLine(prog);
+
+    token = malloc(count * sizeof(token_t));
+    assert(token);
+
+    for(i = 0; i <= count; i++){
+        token[i] = getToken();
+    }
 }
