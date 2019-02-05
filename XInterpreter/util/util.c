@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <assert.h>
 #include "util.h"
 
@@ -95,4 +96,42 @@ string_t new_string(char str[]){
 
 wstring_t new_wstring(wchar_t wstr[]){
     return wcscpy(malloc((wcslen(wstr) + 1) * sizeof(wchar_t)), wstr);
+}
+
+int string_near(string_t str1, string_t str2){
+    while(* str1 && * str2){
+        if(* str1 != * str2){
+            if(isupper(* str1)){
+                if(tolower(* str1) != * str2){
+                    return 0;
+                }
+            }
+            else{
+                if(toupper(* str1) != * str2){
+                    return 0;
+                }
+            }
+        }
+        ++ str1; ++ str2;
+    }
+    return 1;
+}
+
+int wstring_near(wstring_t str1, wstring_t str2){
+    while(* str1 && * str2){
+        if(* str1 != * str2){
+            if(iswupper(* str1)){
+                if(towlower(* str1) != * str2){
+                    return 0;
+                }
+            }
+            else{
+                if(towupper(* str1) != * str2){
+                    return 0;
+                }
+            }
+        }
+        ++ str1; ++ str2;
+    }
+    return 1;
 }

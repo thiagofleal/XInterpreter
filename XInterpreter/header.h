@@ -116,16 +116,10 @@ enum type_value{
 
 enum operator_types{
     /*
-    *   Arrows
-    *
-    *   =>  arrow
-    */
-    arrows_operators = tok_operator,
-    op_arrow,
-    /*
     *   Attribution
     *
     *   =   assignment
+    *   =>  arrow
     *   !!  negative assignment
     *   ++  simple increment
     *   --  simple decrement
@@ -137,8 +131,9 @@ enum operator_types{
     *   ^=  pow assignment
     *   \=  radix assignment
     */
-    assignment_operators,
+    assignment_operators = tok_operator,
     op_assignment,
+    op_arrow,
     op_negative_assignment,
     op_increment,
     op_decrement,

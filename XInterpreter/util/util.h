@@ -25,4 +25,7 @@ int list_search(list, pointer_t, size_t);
 string_t new_string(char[]);
 wstring_t new_wstring(wchar_t[]);
 
+int string_near(string_t, string_t);
+int wstring_near(wstring_t, wstring_t);
+
 #endif // __INTERPRETER_UTIL_H__
