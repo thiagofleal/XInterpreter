@@ -76,7 +76,6 @@ static wstring_t key_words[] = {
     [key_integer] = L"",
     [key_real] = L"",
     [key_string] = L"",
-    [key_file] = L"",
     [key_object] = L"",
     [key_true] = L"",
     [key_false] = L"",
@@ -109,7 +108,7 @@ static wstring_t key_words[] = {
     [key_virtual] = L""
 };
 
-static id_t keyWord(wstring_t word){
+static uint_t keyWord(wstring_t word){
     register int i;
     for(i = key_character; i <= key_virtual; i++){
         if(!wcscmp(word, key_words[i])){

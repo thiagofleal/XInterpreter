@@ -135,3 +135,56 @@ int wstring_near(wstring_t str1, wstring_t str2){
     }
     return 1;
 }
+
+void assign_result(pointer_t src, result_t* dest, int type){
+    switch(dest->type = type){
+        case type_boolean:
+            dest->value.getBoolean = *(boolean_t*)src;
+            break;
+        case type_character:
+            dest->value.getCharacter = *(character_t*)src;
+            break;
+        case type_integer:
+            dest->type = type_real;
+            dest->value.getReal = (real_t)*(integer_t*)src;
+            break;
+        case type_real:
+            dest->value.getReal = *(real_t*)src;
+            break;
+        case type_string:
+            dest->value.getString = *(wstring_t*)src;
+            break;
+        case type_array:
+            dest->value.getPointer = (array_t*)src;
+            break;
+        case type_object:
+            dest->value.getPointer = (object_t*)src;
+            break;
+    }
+}
+
+void assign_pointer(result_t src, pointer_t dest, int type){
+    switch(type){
+        case type_boolean:
+            *(boolean_t*)dest = src.value.getBoolean;
+            break;
+        case type_character:
+            *(character_t*)dest = src.value.getCharacter;
+            break;
+        case type_integer:
+            *(integer_t*)dest = (integer_t)src.value.getReal;
+            break;
+        case type_real:
+            *(real_t*)dest = src.value.getReal;
+            break;
+        case type_string:
+            *(wstring_t*)dest = src.value.getString;
+            break;
+        case type_array:
+            *(array_p*)dest = (array_t*)src.value.getPointer;
+            break;
+        case type_object:
+            *(object_p*)dest = (object_t*)src.value.getPointer;
+            break;
+    }
+}

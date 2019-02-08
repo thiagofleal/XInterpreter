@@ -17,11 +17,15 @@ typedef wchar_t character_t;
 typedef int integer_t;
 typedef double real_t;
 
+typedef unsigned int uint_t;
 typedef void* pointer_t;
 typedef char* string_t;
 typedef wchar_t* wstring_t;
 
-typedef unsigned int id_t;
+typedef struct{
+    pointer_t memory;
+    uint_t count;
+}gc_pointer;
 
 enum number{
     num_args = 50,
@@ -56,7 +60,6 @@ enum key_words{
     key_integer,
     key_real,
     key_string,
-    key_file,
     key_object,
     /* Values */
     key_true,
@@ -109,7 +112,6 @@ enum type_value{
     type_integer,
     type_real,
     type_string,
-    type_file,
     type_array,
     type_object
 };
@@ -246,7 +248,6 @@ enum operator_types{
 typedef union{
     boolean_t getBoolean;
     character_t getCharacter;
-    integer_t getInteger;
     real_t getReal;
     wstring_t getString;
     pointer_t getPointer;
@@ -258,25 +259,20 @@ typedef struct{
 }result_t;
 
 typedef struct{
-    id_t identifier;
+    uint_t identifier;
     int type;
     pointer_t value;
 }variable_t;
 
 typedef struct{
-    pointer_t value;
-    int count;
-    size_t size;
-}vector_t;
-
-typedef struct{
-    vector_t *array;
-    int dimensions;
+    gc_pointer value;
     int type;
-}array_t;
+    size_t size;
+    int dimensions;
+}array_t, *array_p;
 
 typedef struct{
-    id_t identifier;
+    uint_t identifier;
     int count_params;
     int param_type[num_args];
     token_t *enter;
@@ -307,7 +303,7 @@ typedef struct{
 typedef struct str_class class_t;
 
 struct str_class{
-    id_t identifier;
+    uint_t identifier;
     class_t *super;
     int count_constructors;
     method_t constructor[num_constructors];
@@ -322,8 +318,7 @@ struct str_class{
 
 typedef struct{
     class_t *pclass;
-    pointer_t value;
-    int count;
-}object_t;
+    gc_pointer value;
+}object_t, *object_p;
 
 #endif // __INTERPRETER_HEADER_H__
