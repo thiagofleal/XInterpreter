@@ -27,6 +27,16 @@ static result_t evaluateNegativeAssignment(variable_t *var, int order){
 
 static result_t evaluateIncrement(variable_t *var, int order){
     result_t result = {.type = type_real};
+    if(var->type == type_integer){
+        if(order < 0){
+            *(real_t*)var->value = *(integer_t*)var->value + 1.0;
+            result.value.getReal = *(integer_t*)var->value;
+        }
+        else{
+            result.value.getReal = *(integer_t*)var->value;
+            *(real_t*)var->value = *(integer_t*)var->value + 1.0;
+        }
+    }
     if(var->type == type_real){
         if(order < 0){
             *(real_t*)var->value = *(real_t*)var->value + 1.0;
@@ -42,6 +52,16 @@ static result_t evaluateIncrement(variable_t *var, int order){
 
 static result_t evaluateDecrement(variable_t *var, int order){
     result_t result = {.type = type_real};
+    if(var->type == type_integer){
+        if(order < 0){
+            *(real_t*)var->value = *(integer_t*)var->value - 1.0;
+            result.value.getReal = *(integer_t*)var->value;
+        }
+        else{
+            result.value.getReal = *(integer_t*)var->value;
+            *(real_t*)var->value = *(integer_t*)var->value - 1.0;
+        }
+    }
     if(var->type == type_real){
         if(order < 0){
             *(real_t*)var->value = *(real_t*)var->value - 1.0;
@@ -56,47 +76,111 @@ static result_t evaluateDecrement(variable_t *var, int order){
 }
 
 static result_t evaluateAdditionAssignment(variable_t *var, result_t result){
-    if(var->type == type_real){
-        result.value.getReal += *(real_t*)var->value;
-        assign_pointer(result, var->value, var->type);
+    if(var->type == type_integer){
+        result.value.getReal = *(integer_t*)var->value + result.value.getReal;
     }
+    if(var->type == type_real){
+        result.value.getReal = *(real_t*)var->value + result.value.getReal;
+    }
+    assign_pointer(result, var->value, var->type);
     return result;
 }
 
 static result_t evaluateSubtractionAssignment(variable_t *var, result_t result){
+    if(var->type == type_integer){
+        result.value.getReal = *(integer_t*)var->value - result.value.getReal;
+    }
+    if(var->type == type_real){
+        result.value.getReal = *(real_t*)var->value - result.value.getReal;
+    }
+    assign_pointer(result, var->value, var->type);
+    return result;
 }
 
 static result_t evaluateMultiplyAssignment(variable_t *var, result_t result){
+    if(var->type == type_integer){
+        result.value.getReal = *(integer_t*)var->value * result.value.getReal;
+    }
+    if(var->type == type_real){
+        result.value.getReal = *(real_t*)var->value * result.value.getReal;
+    }
+    assign_pointer(result, var->value, var->type);
+    return result;
 }
 
 static result_t evaluateDivisionAssignment(variable_t *var, result_t result){
+    if(var->type == type_integer){
+        result.value.getReal = *(integer_t*)var->value / result.value.getReal;
+    }
+    if(var->type == type_real){
+        result.value.getReal = *(real_t*)var->value / result.value.getReal;
+    }
+    assign_pointer(result, var->value, var->type);
+    return result;
 }
 
 static result_t evaluateModuleAssignment(variable_t *var, result_t result){
+    if(var->type == type_integer){
+        result.value.getReal = *(integer_t*)var->value % (int)result.value.getReal;
+    }
+    if(var->type == type_real){
+        result.value.getReal = ((int)*(real_t*)var->value) % (int)result.value.getReal;
+    }
+    assign_pointer(result, var->value, var->type);
+    return result;
 }
 
 static result_t evaluatePowAssignment(variable_t *var, result_t result){
+    if(var->type == type_integer){
+        result.value.getReal = pow((double)*(integer_t*)var->value, result.value.getReal);
+    }
+    if(var->type == type_real){
+        result.value.getReal = pow(*(real_t*)var->value, result.value.getReal);
+    }
+    assign_pointer(result, var->value, var->type);
+    return result;
 }
 
 static result_t evaluateRadixAssignment(variable_t *var, result_t result){
+    if(var->type == type_integer){
+        result.value.getReal = pow((double)*(integer_t*)var->value, 1.0 / result.value.getReal);
+    }
+    if(var->type == type_real){
+        result.value.getReal = pow(*(real_t*)var->value, 1.0 / result.value.getReal);
+    }
+    assign_pointer(result, var->value, var->type);
+    return result;
 }
 
 static result_t evaluateAt(result_t left, result_t right){
+    result_t result;
+    return result;
 }
 
 static result_t evaluateFence(result_t left, result_t right){
+    result_t result;
+    return result;
 }
 
 static result_t evaluateDollar(result_t left, result_t right){
+    result_t result;
+    return result;
 }
 
 static result_t evaluateAmpersand(result_t left, result_t right){
+    result_t result = {.type = type_real};
+    if(left.type == right.type && left.type == type_real){
+        result.value.getReal = (real_t)((int)left.value.getReal & (int)right.value.getReal);
+    }
+    return result;
 }
 
 static result_t evaluatePipe(result_t left, result_t right){
-}
-
-static result_t evaluateTilde(result_t left, result_t right){
+    result_t result = {.type = type_real};
+    if(left.type == right.type && left.type == type_real){
+        result.value.getReal = (real_t)((int)left.value.getReal | (int)right.value.getReal);
+    }
+    return result;
 }
 
 static result_t evaluateQuery(result_t left, result_t right){
