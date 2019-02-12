@@ -183,19 +183,63 @@ static result_t evaluatePipe(result_t left, result_t right){
     return result;
 }
 
-static result_t evaluateQuery(result_t left, result_t right){
+static result_t evaluateTilde(result_t result){
+    if(result.type == type_real){
+        result.value.getReal = (real_t)( ~ (int)result.value.getReal);
+    }
+    return result;
+}
+
+static result_t evaluateQuery(result_t condition, result_t case_true, result_t case_false){
+    if(condition.type == type_boolean){
+        return condition.value.getBoolean ? case_true : case_false;
+    }
+    return condition;
 }
 
 static result_t evaluateDoubleQuery(result_t left, result_t right){
+    if(left.type == type_array || left.type == type_object){
+        return left.value.getPointer ? left : right;
+    }
+    if(left.type == type_boolean){
+        return left.value.getBoolean ? left : right;
+    }
+    if(left.type == type_real){
+        return left.value.getReal ? left : right;
+    }
+    if(left.type == type_string){
+        return * left.value.getString ? left : right;
+    }
+    return left;
 }
 
 static result_t evaluateDoubleLeft(result_t left, result_t right){
+    result_t result;
+    if(left.type == type_real && right.type == type_real){
+        result.value.getReal = (real_t)((int)left.value.getReal << (int)right.value.getReal);
+    }
+    if(left.type == type_string){
+        // Future implementation
+    }
+    return result;
 }
 
 static result_t evaluateDoubleRight(result_t left, result_t right){
+    result_t result;
+    if(left.type == type_real && right.type == type_real){
+        result.value.getReal = (real_t)((int)left.value.getReal >> (int)right.value.getReal);
+    }
+    if(left.type == type_string){
+        // Future implementation
+    }
+    return result;
 }
 
-static result_t evaluateNot(result_t left, result_t right){
+static result_t evaluateNot(result_t result){
+    if(result.type == type_boolean){
+        result.value.getBoolean = result.value.getBoolean ? False : True;
+    }
+    return result;
 }
 
 static result_t evaluateAnd(result_t left, result_t right){
@@ -273,6 +317,8 @@ static result_t evaluateEqual(result_t left, result_t right){
             case type_object:
                 ret.value.getBoolean = left.value.getPointer == right.value.getPointer ? True : False;
                 break;
+            default:
+                break;
         }
     }
     return ret;
@@ -302,6 +348,8 @@ static result_t evaluateDifferent(result_t left, result_t right){
                 break;
             case type_object:
                 ret.value.getBoolean = left.value.getPointer != right.value.getPointer ? True : False;
+                break;
+            default:
                 break;
         }
     }
@@ -387,30 +435,74 @@ static result_t evaluateLessOrEqual(result_t left, result_t right){
 }
 
 static result_t evaluateAddition(result_t left, result_t right){
+    result_t result;
+    if(left.type == type_real && right.type == type_real){
+        result.type = type_real;
+        result.value.getReal = left.value.getReal + right.value.getReal;
+    }
+    return result;
 }
 
 static result_t evaluateSubtraction(result_t left, result_t right){
+    result_t result;
+    if(left.type == type_real && right.type == type_real){
+        result.type = type_real;
+        result.value.getReal = left.value.getReal - right.value.getReal;
+    }
+    return result;
 }
 
 static result_t evaluateMultiply(result_t left, result_t right){
+    result_t result;
+    if(left.type == type_real && right.type == type_real){
+        result.type = type_real;
+        result.value.getReal = left.value.getReal * right.value.getReal;
+    }
+    return result;
 }
 
 static result_t evaluateDivision(result_t left, result_t right){
+    result_t result;
+    if(left.type == type_real && right.type == type_real){
+        result.type = type_real;
+        result.value.getReal = left.value.getReal / right.value.getReal;
+    }
+    return result;
 }
 
 static result_t evaluateModule(result_t left, result_t right){
+    result_t result;
+    if(left.type == type_real && right.type == type_real){
+        result.type = type_real;
+        result.value.getReal = (int)left.value.getReal % (int)right.value.getReal;
+    }
+    return result;
 }
 
 static result_t evaluatePow(result_t left, result_t right){
+    result_t result;
+    if(left.type == type_real && right.type == type_real){
+        result.type = type_real;
+        result.value.getReal = pow(left.value.getReal, right.value.getReal);
+    }
+    return result;
 }
 
 static result_t evaluateRadix(result_t left, result_t right){
+    result_t result;
+    if(left.type == type_real && right.type == type_real){
+        result.type = type_real;
+        result.value.getReal = pow(left.value.getReal, 1.0 / right.value.getReal);
+    }
+    return result;
 }
 
-static result_t evaluateDot(result_t left, token_t right){
+static result_t evaluateDot(result_t left, token_t *right){
+    return left;
 }
 
-static result_t evaluateQueryDot(result_t left, token_t right){
+static result_t evaluateQueryDot(result_t left, token_t *right){
+    return left;
 }
 
 static result_t evaluateBrackets(result_t stream, result_t element){
@@ -427,7 +519,6 @@ static result_t evaluateBrackets(result_t stream, result_t element){
     }
     return ret;
 }
-
 
 result_t expression(void){
     result_t result;

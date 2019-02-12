@@ -106,7 +106,7 @@ typedef struct{
     string_t file;
 }token_t;
 
-enum type_value{
+typedef enum{
     type_boolean,
     type_character,
     type_integer,
@@ -114,9 +114,9 @@ enum type_value{
     type_string,
     type_array,
     type_object
-};
+}type_value;
 
-enum operator_types{
+typedef enum{
     /*
     *   Attribution
     *
@@ -243,7 +243,7 @@ enum operator_types{
     op_query_dot,
     op_bracket_open,
     op_bracket_close
-};
+}operator_types;
 
 typedef union{
     boolean_t getBoolean;
@@ -254,19 +254,19 @@ typedef union{
 }value_t;
 
 typedef struct{
-    int type;
+    type_value type;
     value_t value;
 }result_t;
 
 typedef struct{
     uint_t identifier;
-    int type;
+    type_value type;
     pointer_t value;
 }variable_t;
 
 typedef struct{
     gc_pointer value;
-    int type;
+    type_value type;
     size_t size;
     int dimensions;
 }array_t, *array_p;
@@ -292,12 +292,12 @@ enum visibility_mode{
 
 typedef struct{
     variable_t super;
-    int visibility;
+    enum visibility_mode visibility;
 }attribute_t;
 
 typedef struct{
     function_t super;
-    int visibility;
+    enum visibility_mode visibility;
 }method_t;
 
 typedef struct str_class class_t;
