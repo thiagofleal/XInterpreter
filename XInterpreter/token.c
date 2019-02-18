@@ -47,6 +47,12 @@ wchar_t getCharacter(void){
             case L'v':
                 ret = L'\v';
                 return ret;
+            case L'\'':
+                ret = L'\'';
+                return ret;
+            case L'\"':
+                ret = L'\"';
+                return ret;
         }
     }
     return * prog ++;
@@ -112,7 +118,7 @@ static uint_t keyWord(wstring_t word){
     register int i;
     for(i = key_character; i <= key_virtual; i++){
         if(!wcscmp(word, key_words[i])){
-            return i;
+            return i + tok_reserved;
         }
     }
     return -1;
@@ -139,7 +145,9 @@ static token_t getToken(void){
         if(* (prog + 1) == L'*'){
             ++ prog;
             do{
-                while(* ++ prog != L'*');
+                while(* ++ prog != L'*')
+                    if(! * prog)
+                        printError(non_terminated_commentary, ret, NULL);
             }while(* ++ prog != L'/');
             return getToken();
         }
@@ -173,7 +181,8 @@ static token_t getToken(void){
     if(* prog == L'\''){
         ++ prog;
         * pwstr ++ = getCharacter();
-        if(* prog != L'\''){
+        if(* prog ++ != L'\''){
+            printError(non_terminated_single_quot, ret, NULL);
             exit(EXIT_FAILURE);
         }
         * pwstr = 0;
@@ -188,11 +197,15 @@ static token_t getToken(void){
         ++ prog;
         while(* prog != L'\"'){
             * pwstr ++ = getCharacter();
+            if(! * prog)
+                printError(non_terminated_double_quot, ret, NULL);
         }
         * pwstr = 0;
         ret.type = tok_string;
         ret.value = new_wstring(wstr);
+        wprintf(L" -> %s\n", ret.value);
         ret.intern = tok_string;
+        ++ prog;
         return ret;
     }
 
@@ -202,7 +215,7 @@ static token_t getToken(void){
         * pwstr = 0;
         ret.type = tok_punctuation;
         ret.value = new_wstring(wstr);
-        ret.intern = *(wchar_t*)wstr;
+        ret.intern = * wstr + tok_punctuation;
         return ret;
     }
 
@@ -504,6 +517,7 @@ static token_t getToken(void){
         * pwstr ++ = * prog ++;
     }
 
+    * pwstr = 0;
     ret.value = new_wstring(wstr);
 
     /* Key words and identifiers */
@@ -512,8 +526,10 @@ static token_t getToken(void){
     }
     else{
         ret.type = tok_identifier;
-        while((ret.intern = list_search(identifiers, wstr, wcslen(wstr) + sizeof(wchar_t))) == -1){
+        ret.intern = list_search(identifiers, wstr, wcslen(wstr) + sizeof(wchar_t));
+        if(ret.intern == -1){
             list_add(identifiers, new_wstring(wstr));
+            ret.intern = list_search(identifiers, wstr, wcslen(wstr) + sizeof(wchar_t));
         }
         ret.intern += tok_identifier;
     }
@@ -525,7 +541,7 @@ INLINE void registerKeyWord(int index, wstring_t value){
     key_words[index] = value;
 }
 
-void initTokens(string_t file, wstring_t content){
+void initTokens(const string_t file, const wstring_t content){
     register int i, count;
     token_t tok;
 

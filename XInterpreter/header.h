@@ -43,7 +43,7 @@ enum default_values{
     default_array = -1
 };
 
-enum type_token{
+typedef enum{
     tok_reserved = 100,
     tok_identifier = 200,
     tok_constant = 0,
@@ -51,7 +51,7 @@ enum type_token{
     tok_punctuation = 10,
     tok_operator = 20,
     tok_end = -1
-};
+}type_token;
 
 enum key_words{
     /* Types */
@@ -99,7 +99,7 @@ enum key_words{
 };
 
 typedef struct{
-    int type;
+    type_token type;
     wstring_t value;
     int intern;
     int line;
@@ -242,7 +242,9 @@ typedef enum{
     op_dot,
     op_query_dot,
     op_bracket_open,
-    op_bracket_close
+    op_bracket_close,
+
+    end_operators
 }operator_types;
 
 typedef union{
@@ -320,5 +322,26 @@ typedef struct{
     class_t *pclass;
     gc_pointer value;
 }object_t, *object_p;
+
+typedef enum{
+    expected_token,
+    non_terminated_single_quot,
+    non_terminated_double_quot,
+    non_terminated_commentary,
+    undeclared_variable,
+    undeclared_function,
+    undeclared_attribute,
+    undeclared_method,
+    undeclared_class,
+    illegal_number,
+    syntax_error
+}type_error;
+
+extern token_t *token;
+
+extern INLINE void printError(type_error error, token_t from, wstring_t message);
+extern INLINE void expectedToken(type_token type, int intern, wstring_t value);
+
+extern result_t expression(void);
 
 #endif // __INTERPRETER_HEADER_H__

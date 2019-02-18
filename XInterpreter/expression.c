@@ -3,152 +3,152 @@
 #include "header.h"
 #include "util/util.h"
 
-extern token_t *token;
+result_t expression(void);
 
-static INLINE result_t evaluateAssignment(variable_t *var, result_t result){
-    assign_pointer(result, var->value, var->type);
+static INLINE result_t evaluateAssignment(pointer_t value, type_value type, result_t result){
+    assign_pointer(result, value, type);
     return result;
 }
 
-static result_t evaluateNegativeAssignment(variable_t *var, int order){
+static result_t evaluateNegativeAssignment(pointer_t value, type_value type, int order){
     result_t result = {.type = type_boolean};
-    if(var->type == type_boolean){
+    if(type == type_boolean){
         if(order < 0){
-            *(boolean_t*)var->value = *(boolean_t*)var->value ? False : True;
-            result.value.getBoolean = *(boolean_t*)var->value;
+            *(boolean_t*)value = *(boolean_t*)value ? False : True;
+            result.value.getBoolean = *(boolean_t*)value;
         }
         else{
-            result.value.getBoolean = *(boolean_t*)var->value;
-            *(boolean_t*)var->value = *(boolean_t*)var->value ? False : True;
+            result.value.getBoolean = *(boolean_t*)value;
+            *(boolean_t*)value = *(boolean_t*)value ? False : True;
         }
     }
     return result;
 }
 
-static result_t evaluateIncrement(variable_t *var, int order){
+static result_t evaluateIncrement(pointer_t value, type_value type, int order){
     result_t result = {.type = type_real};
-    if(var->type == type_integer){
+    if(type == type_integer){
         if(order < 0){
-            *(real_t*)var->value = *(integer_t*)var->value + 1.0;
-            result.value.getReal = *(integer_t*)var->value;
+            *(real_t*)value = *(integer_t*)value + 1.0;
+            result.value.getReal = *(integer_t*)value;
         }
         else{
-            result.value.getReal = *(integer_t*)var->value;
-            *(real_t*)var->value = *(integer_t*)var->value + 1.0;
+            result.value.getReal = *(integer_t*)value;
+            *(real_t*)value = *(integer_t*)value + 1.0;
         }
     }
-    if(var->type == type_real){
+    if(type == type_real){
         if(order < 0){
-            *(real_t*)var->value = *(real_t*)var->value + 1.0;
-            result.value.getReal = *(real_t*)var->value;
+            *(real_t*)value = *(real_t*)value + 1.0;
+            result.value.getReal = *(real_t*)value;
         }
         else{
-            result.value.getReal = *(real_t*)var->value;
-            *(real_t*)var->value = *(real_t*)var->value + 1.0;
+            result.value.getReal = *(real_t*)value;
+            *(real_t*)value = *(real_t*)value + 1.0;
         }
     }
     return result;
 }
 
-static result_t evaluateDecrement(variable_t *var, int order){
+static result_t evaluateDecrement(pointer_t value, type_value type, int order){
     result_t result = {.type = type_real};
-    if(var->type == type_integer){
+    if(type == type_integer){
         if(order < 0){
-            *(real_t*)var->value = *(integer_t*)var->value - 1.0;
-            result.value.getReal = *(integer_t*)var->value;
+            *(real_t*)value = *(integer_t*)value - 1.0;
+            result.value.getReal = *(integer_t*)value;
         }
         else{
-            result.value.getReal = *(integer_t*)var->value;
-            *(real_t*)var->value = *(integer_t*)var->value - 1.0;
+            result.value.getReal = *(integer_t*)value;
+            *(real_t*)value = *(integer_t*)value - 1.0;
         }
     }
-    if(var->type == type_real){
+    if(type == type_real){
         if(order < 0){
-            *(real_t*)var->value = *(real_t*)var->value - 1.0;
-            result.value.getReal = *(real_t*)var->value;
+            *(real_t*)value = *(real_t*)value - 1.0;
+            result.value.getReal = *(real_t*)value;
         }
         else{
-            result.value.getReal = *(real_t*)var->value;
-            *(real_t*)var->value = *(real_t*)var->value - 1.0;
+            result.value.getReal = *(real_t*)value;
+            *(real_t*)value = *(real_t*)value - 1.0;
         }
     }
     return result;
 }
 
-static result_t evaluateAdditionAssignment(variable_t *var, result_t result){
-    if(var->type == type_integer){
-        result.value.getReal = *(integer_t*)var->value + result.value.getReal;
+static result_t evaluateAdditionAssignment(pointer_t value, type_value type, result_t result){
+    if(type == type_integer){
+        result.value.getReal = *(integer_t*)value + result.value.getReal;
     }
-    if(var->type == type_real){
-        result.value.getReal = *(real_t*)var->value + result.value.getReal;
+    if(type == type_real){
+        result.value.getReal = *(real_t*)value + result.value.getReal;
     }
-    assign_pointer(result, var->value, var->type);
+    assign_pointer(result, value, type);
     return result;
 }
 
-static result_t evaluateSubtractionAssignment(variable_t *var, result_t result){
-    if(var->type == type_integer){
-        result.value.getReal = *(integer_t*)var->value - result.value.getReal;
+static result_t evaluateSubtractionAssignment(pointer_t value, type_value type, result_t result){
+    if(type == type_integer){
+        result.value.getReal = *(integer_t*)value - result.value.getReal;
     }
-    if(var->type == type_real){
-        result.value.getReal = *(real_t*)var->value - result.value.getReal;
+    if(type == type_real){
+        result.value.getReal = *(real_t*)value - result.value.getReal;
     }
-    assign_pointer(result, var->value, var->type);
+    assign_pointer(result, value, type);
     return result;
 }
 
-static result_t evaluateMultiplyAssignment(variable_t *var, result_t result){
-    if(var->type == type_integer){
-        result.value.getReal = *(integer_t*)var->value * result.value.getReal;
+static result_t evaluateMultiplyAssignment(pointer_t value, type_value type, result_t result){
+    if(type == type_integer){
+        result.value.getReal = *(integer_t*)value * result.value.getReal;
     }
-    if(var->type == type_real){
-        result.value.getReal = *(real_t*)var->value * result.value.getReal;
+    if(type == type_real){
+        result.value.getReal = *(real_t*)value * result.value.getReal;
     }
-    assign_pointer(result, var->value, var->type);
+    assign_pointer(result, value, type);
     return result;
 }
 
-static result_t evaluateDivisionAssignment(variable_t *var, result_t result){
-    if(var->type == type_integer){
-        result.value.getReal = *(integer_t*)var->value / result.value.getReal;
+static result_t evaluateDivisionAssignment(pointer_t value, type_value type, result_t result){
+    if(type == type_integer){
+        result.value.getReal = *(integer_t*)value / result.value.getReal;
     }
-    if(var->type == type_real){
-        result.value.getReal = *(real_t*)var->value / result.value.getReal;
+    if(type == type_real){
+        result.value.getReal = *(real_t*)value / result.value.getReal;
     }
-    assign_pointer(result, var->value, var->type);
+    assign_pointer(result, value, type);
     return result;
 }
 
-static result_t evaluateModuleAssignment(variable_t *var, result_t result){
-    if(var->type == type_integer){
-        result.value.getReal = *(integer_t*)var->value % (int)result.value.getReal;
+static result_t evaluateModuleAssignment(pointer_t value, type_value type, result_t result){
+    if(type == type_integer){
+        result.value.getReal = *(integer_t*)value % (int)result.value.getReal;
     }
-    if(var->type == type_real){
-        result.value.getReal = ((int)*(real_t*)var->value) % (int)result.value.getReal;
+    if(type == type_real){
+        result.value.getReal = ((int)*(real_t*)value) % (int)result.value.getReal;
     }
-    assign_pointer(result, var->value, var->type);
+    assign_pointer(result, value, type);
     return result;
 }
 
-static result_t evaluatePowAssignment(variable_t *var, result_t result){
-    if(var->type == type_integer){
-        result.value.getReal = pow((double)*(integer_t*)var->value, result.value.getReal);
+static result_t evaluatePowAssignment(pointer_t value, type_value type, result_t result){
+    if(type == type_integer){
+        result.value.getReal = pow((double)*(integer_t*)value, result.value.getReal);
     }
-    if(var->type == type_real){
-        result.value.getReal = pow(*(real_t*)var->value, result.value.getReal);
+    if(type == type_real){
+        result.value.getReal = pow(*(real_t*)value, result.value.getReal);
     }
-    assign_pointer(result, var->value, var->type);
+    assign_pointer(result, value, type);
     return result;
 }
 
-static result_t evaluateRadixAssignment(variable_t *var, result_t result){
-    if(var->type == type_integer){
-        result.value.getReal = pow((double)*(integer_t*)var->value, 1.0 / result.value.getReal);
+static result_t evaluateRadixAssignment(pointer_t value, type_value type, result_t result){
+    if(type == type_integer){
+        result.value.getReal = pow((double)*(integer_t*)value, 1.0 / result.value.getReal);
     }
-    if(var->type == type_real){
-        result.value.getReal = pow(*(real_t*)var->value, 1.0 / result.value.getReal);
+    if(type == type_real){
+        result.value.getReal = pow(*(real_t*)value, 1.0 / result.value.getReal);
     }
-    assign_pointer(result, var->value, var->type);
+    assign_pointer(result, value, type);
     return result;
 }
 
@@ -510,9 +510,9 @@ static result_t evaluateBrackets(result_t stream, result_t element){
     if(stream.type == type_array && element.type == type_real){
         array_t *array = stream.value.getPointer;
         int type = array->dimensions - 1 ? type_array : array->type;
+        pointer_t value = array->value.memory + array->size * (size_t)element.value.getReal;
         assign_result(
-            array->value.memory +
-                array->size * (size_t)element.value.getReal,
+            value,
             &ret,
             type
         );
@@ -520,7 +520,277 @@ static result_t evaluateBrackets(result_t stream, result_t element){
     return ret;
 }
 
+static result_t term(void){
+    result_t result;
+    wstring_t check = NULL;
+    switch(token -> type){
+        case tok_punctuation:
+            if(* token -> value == L'('){
+                result = expression();
+                expectedToken(tok_punctuation, tok_punctuation + L')', L")");
+            }
+            break;
+        case tok_operator:
+            switch((token ++)->intern){
+                case op_addition:
+                    result = term();
+                    break;
+                case op_subtraction:
+                    result = term();
+                    result.value.getReal *= -1.0;
+                    break;
+                case op_not:
+                    result = term();
+                    result.value.getBoolean = result.value.getBoolean ? False : True;
+                    break;
+                case op_tilde:
+                    result = term();
+                    result.value.getReal = (real_t)( ~ (int)result.value.getReal);
+                    break;
+            }
+            break;
+        case tok_constant:
+            result.type = type_real;
+            result.value.getReal = wcstod(token->value, &check);
+            if(!check){
+                printError(illegal_number, *token, token->value);
+            }
+            break;
+        default:
+            break;
+    }
+    return result;
+}
+
+static void evaluateMultiPurpose(result_t*);
+static void evaluateLogic(result_t*);
+static void evaluateRelational(result_t*);
+static void evaluateArithmeticSum(result_t*);
+static void evaluateArithmeticMul(result_t*);
+static void evaluateArithmeticPow(result_t*);
+static void evaluateValue(result_t*);
+
 result_t expression(void){
     result_t result;
+
+    evaluateMultiPurpose(&result);
     return result;
+}
+
+static void evaluateMultiPurpose(result_t *current){
+    result_t lvalue, rvalue;
+    operator_types op;
+
+    evaluateLogic(current);
+    ++ token;
+
+    while(token->intern > multi_purpose_operators && token->intern < logic_operators){
+        lvalue = * current;
+        op = token->intern;
+        evaluateLogic(&rvalue);
+
+        switch(op){
+            case op_at:
+                * current = evaluateAt(lvalue, rvalue);
+                break;
+            case op_fence:
+                * current = evaluateFence(lvalue, rvalue);
+                break;
+            case op_dollar:
+                * current = evaluateDollar(lvalue, rvalue);
+                break;
+            case op_ampersand:
+                * current = evaluateAmpersand(lvalue, rvalue);
+                break;
+            case op_pipe:
+                * current = evaluatePipe(lvalue, rvalue);
+                break;
+            case op_double_query:
+                * current = evaluateDoubleQuery(lvalue, rvalue);
+                break;
+            case op_double_left:
+                * current = evaluateDoubleLeft(lvalue, rvalue);
+                break;
+            case op_double_right:
+                * current = evaluateDoubleRight(lvalue, rvalue);
+                break;
+            default:
+                break;
+        }
+        ++ token;
+    }
+    -- token;
+}
+
+static void evaluateLogic(result_t *current){
+    result_t lvalue, rvalue;
+    operator_types op;
+
+    evaluateRelational(current);
+    ++ token;
+
+    while(token->intern > logic_operators && token->intern < relational_operators){
+        lvalue = * current;
+        op = token->intern;
+        evaluateRelational(&rvalue);
+
+        switch(op){
+            case op_and:
+                * current = evaluateAnd(lvalue, rvalue);
+                break;
+            case op_or:
+                * current = evaluateOr(lvalue, rvalue);
+                break;
+            case op_xor:
+                * current = evaluateXor(lvalue, rvalue);
+                break;
+            case op_if_then:
+                * current = evaluateIfThen(lvalue, rvalue);
+                break;
+            case op_only_if:
+                * current = evaluateOnlyIf(lvalue, rvalue);
+                break;
+            default:
+                break;
+        }
+        ++ token;
+    }
+    -- token;
+}
+
+static void evaluateRelational(result_t *current){
+    result_t lvalue, rvalue;
+    operator_types op;
+
+    evaluateArithmeticSum(current);
+    ++ token;
+
+    while(token->intern > relational_operators && token->intern < arithmetic_operators){
+        lvalue = * current;
+        op = token->intern;
+        evaluateArithmeticSum(&rvalue);
+
+        switch(op){
+            case op_equal:
+                * current = evaluateEqual(lvalue, rvalue);
+                break;
+            case op_different:
+                * current = evaluateDifferent(lvalue, rvalue);
+                break;
+            case op_near:
+                * current = evaluateNear(lvalue, rvalue);
+                break;
+            case op_not_near:
+                * current = evaluateNotNear(lvalue, rvalue);
+                break;
+            case op_near_or_identical:
+                * current = evaluateNearOrIdentical(lvalue, rvalue);
+                break;
+            case op_larger:
+                * current = evaluateLarger(lvalue, rvalue);
+                break;
+            case op_larger_or_equal:
+                * current = evaluateLargerOrEqual(lvalue, rvalue);
+                break;
+            case op_less:
+                * current = evaluateLess(lvalue, rvalue);
+                break;
+            case op_less_or_equal:
+                * current = evaluateLessOrEqual(lvalue, rvalue);
+                break;
+            default:
+                break;
+        }
+        ++ token;
+    }
+    -- token;
+}
+
+static void evaluateArithmeticSum(result_t *current){
+    result_t lvalue, rvalue;
+    operator_types op;
+
+    evaluateArithmeticMul(current);
+    ++ token;
+
+    while(token->intern >= op_addition && token->intern <= op_subtraction){
+        lvalue = * current;
+        op = token->intern;
+        evaluateArithmeticMul(&rvalue);
+
+        switch(op){
+            case op_addition:
+                * current = evaluateAddition(lvalue, rvalue);
+                break;
+            case op_subtraction:
+                * current = evaluateSubtraction(lvalue, rvalue);
+                break;
+            default:
+                break;
+        }
+        ++ token;
+    }
+    -- token;
+}
+
+static void evaluateArithmeticMul(result_t *current){
+    result_t lvalue, rvalue;
+    operator_types op;
+
+    evaluateArithmeticPow(current);
+    ++ token;
+
+    while(token->intern >= op_multiply && token->intern <= op_module){
+        lvalue = * current;
+        op = token->intern;
+        evaluateArithmeticPow(&rvalue);
+
+        switch(op){
+            case op_multiply:
+                * current = evaluateMultiply(lvalue, rvalue);
+                break;
+            case op_division:
+                * current = evaluateDivision(lvalue, rvalue);
+                break;
+            case op_module:
+                * current = evaluateModule(lvalue, rvalue);
+                break;
+            default:
+                break;
+        }
+        ++ token;
+    }
+    -- token;
+}
+
+static void evaluateArithmeticPow(result_t *current){
+    result_t lvalue, rvalue;
+    operator_types op;
+
+    evaluateValue(current);
+    ++ token;
+
+    while(token->intern >= op_pow && token->intern <= op_radix){
+        lvalue = * current;
+        op = token->intern;
+        evaluateValue(&rvalue);
+
+        switch(op){
+            case op_pow:
+                * current = evaluatePow(lvalue, rvalue);
+                break;
+            case op_radix:
+                * current = evaluateRadix(lvalue, rvalue);
+                break;
+            default:
+                break;
+        }
+        ++ token;
+    }
+    -- token;
+}
+
+static void evaluateValue(result_t *current){
+    ++ token;
+    *current = term();
 }
