@@ -38,6 +38,9 @@ INLINE void expectedToken(type_token type, int intern, wstring_t value){
     }
 }
 
+extern void registerKeyWord(int, wstring_t);
+extern void declareVariable(void);
+
 int main(int argc, string_t argv[]){
     return 0;
 }

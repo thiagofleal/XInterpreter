@@ -55,12 +55,13 @@ typedef enum{
 
 enum key_words{
     /* Types */
+    key_boolean = tok_reserved,
     key_character,
-    key_boolean,
     key_integer,
     key_real,
     key_string,
     key_object,
+    key_args,
     /* Values */
     key_true,
     key_false,
@@ -107,13 +108,14 @@ typedef struct{
 }token_t;
 
 typedef enum{
-    type_boolean,
+    type_boolean = 0,
     type_character,
     type_integer,
     type_real,
     type_string,
     type_array,
-    type_object
+    type_object,
+    type_args
 }type_value;
 
 typedef enum{
@@ -264,7 +266,7 @@ typedef struct{
     uint_t identifier;
     type_value type;
     pointer_t value;
-}variable_t;
+}variable_t, *variable_p;
 
 typedef struct{
     gc_pointer value;
@@ -278,7 +280,7 @@ typedef struct{
     int count_params;
     int param_type[num_args];
     token_t *enter;
-}function_t;
+}function_t, *function_p;
 
 typedef struct{
     function_t *pfunction;
@@ -286,23 +288,23 @@ typedef struct{
     result_t result;
 }function;
 
-enum visibility_mode{
+typedef enum{
     mode_public,
     mode_protected,
     mode_private
-};
+}visibility_mode;
 
 typedef struct{
     variable_t super;
-    enum visibility_mode visibility;
+    visibility_mode visibility;
 }attribute_t;
 
 typedef struct{
     function_t super;
-    enum visibility_mode visibility;
-}method_t;
+    visibility_mode visibility;
+}method_t, *method_p;
 
-typedef struct str_class class_t;
+typedef struct str_class class_t, *class_p;
 
 struct str_class{
     uint_t identifier;
@@ -319,7 +321,7 @@ struct str_class{
 };
 
 typedef struct{
-    class_t *pclass;
+    class_p pclass;
     gc_pointer value;
 }object_t, *object_p;
 
@@ -343,5 +345,6 @@ extern INLINE void printError(type_error error, token_t from, wstring_t message)
 extern INLINE void expectedToken(type_token type, int intern, wstring_t value);
 
 extern result_t expression(void);
+extern variable_p findVariable(uint_t);
 
 #endif // __INTERPRETER_HEADER_H__

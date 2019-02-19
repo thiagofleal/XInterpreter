@@ -76,13 +76,14 @@ static int getLine(wstring_t origin){
     return line;
 }
 
-static wstring_t key_words[] = {
-    [key_character] = L"",
+static wstring_t __key_words[] = {
     [key_boolean] = L"",
+    [key_character] = L"",
     [key_integer] = L"",
     [key_real] = L"",
     [key_string] = L"",
     [key_object] = L"",
+    [key_args] = L"",
     [key_true] = L"",
     [key_false] = L"",
     [key_null] = L"",
@@ -116,9 +117,9 @@ static wstring_t key_words[] = {
 
 static uint_t keyWord(wstring_t word){
     register int i;
-    for(i = key_character; i <= key_virtual; i++){
-        if(!wcscmp(word, key_words[i])){
-            return i + tok_reserved;
+    for(i = key_boolean; i <= key_virtual; i++){
+        if(!wcscmp(word, __key_words[i])){
+            return i;
         }
     }
     return -1;
@@ -538,7 +539,7 @@ static token_t getToken(void){
 }
 
 INLINE void registerKeyWord(int index, wstring_t value){
-    key_words[index] = value;
+    __key_words[index] = value;
 }
 
 void initTokens(const string_t file, const wstring_t content){
@@ -555,13 +556,14 @@ void initTokens(const string_t file, const wstring_t content){
         tok = getToken();
     }
 
+    ++ count;
     prog = content;
     getLine(prog);
 
     token = malloc(count * sizeof(token_t));
     assert(token);
 
-    for(i = 0; i <= count; i++){
+    for(i = 0; i < count; i++){
         token[i] = getToken();
     }
 }

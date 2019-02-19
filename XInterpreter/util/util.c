@@ -155,10 +155,10 @@ void assign_result(pointer_t src, result_t* dest, int type){
             dest->value.getString = *(wstring_t*)src;
             break;
         case type_array:
-            dest->value.getPointer = (array_t*)src;
+            dest->value.getPointer = *(array_p*)src;
             break;
         case type_object:
-            dest->value.getPointer = (object_t*)src;
+            dest->value.getPointer = *(object_p*)src;
             break;
     }
 }

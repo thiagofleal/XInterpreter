@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <math.h>
 #include <string.h>
 #include "header.h"
@@ -29,12 +30,12 @@ static result_t evaluateIncrement(pointer_t value, type_value type, int order){
     result_t result = {.type = type_real};
     if(type == type_integer){
         if(order < 0){
-            *(real_t*)value = *(integer_t*)value + 1.0;
+            *(integer_t*)value = *(integer_t*)value + 1.0;
             result.value.getReal = *(integer_t*)value;
         }
         else{
             result.value.getReal = *(integer_t*)value;
-            *(real_t*)value = *(integer_t*)value + 1.0;
+            *(integer_t*)value = *(integer_t*)value + 1.0;
         }
     }
     if(type == type_real){
@@ -54,12 +55,12 @@ static result_t evaluateDecrement(pointer_t value, type_value type, int order){
     result_t result = {.type = type_real};
     if(type == type_integer){
         if(order < 0){
-            *(real_t*)value = *(integer_t*)value - 1.0;
+            *(integer_t*)value = *(integer_t*)value - 1.0;
             result.value.getReal = *(integer_t*)value;
         }
         else{
             result.value.getReal = *(integer_t*)value;
-            *(real_t*)value = *(integer_t*)value - 1.0;
+            *(integer_t*)value = *(integer_t*)value - 1.0;
         }
     }
     if(type == type_real){
@@ -524,14 +525,121 @@ static result_t term(void){
     result_t result;
     wstring_t check = NULL;
     switch(token -> type){
+        case tok_reserved:
+            switch(token->intern){
+                case key_true:
+                    result.type = type_boolean;
+                    result.value.getBoolean = True;
+                    break;
+                case key_false:
+                    result.type = type_boolean;
+                    result.value.getBoolean = False;
+                    break;
+                case key_null:
+                    result.type = type_object;
+                    result.value.getPointer = NULL;
+                    break;
+            }
+            break;
+        case tok_identifier:
+            if((token + 1) -> intern == L'(' + tok_punctuation){
+                // function
+            }
+            else{
+                variable_p variable = findVariable(token->intern);
+
+                if(!variable){
+                    printError(undeclared_variable, *token, token->value);
+                    exit(EXIT_FAILURE);
+                }
+                assign_result(variable->value, &result, variable->type);
+
+                if((token + 1) -> type == tok_operator){
+                    switch((++ token) -> intern){
+                        case op_assignment:
+                            ++ token;
+                            result = evaluateAssignment(variable->value, variable->type, expression());
+                            break;
+                        case op_negative_assignment:
+                            result = evaluateNegativeAssignment(variable->value, variable->type, 1);
+                            break;
+                        case op_increment:
+                            result = evaluateIncrement(variable->value, variable->type, 1);
+                            break;
+                        case op_decrement:
+                            result = evaluateDecrement(variable->value, variable->type, 1);
+                            break;
+                        case op_addition_assignment:
+                            ++ token;
+                            result = evaluateAdditionAssignment(variable->value, variable->type, expression());
+                            break;
+                        case op_subtraction_assignment:
+                            ++ token;
+                            result = evaluateSubtractionAssignment(variable->value, variable->type, expression());
+                            break;
+                        case op_multiply_assignment:
+                            ++ token;
+                            result = evaluateMultiplyAssignment(variable->value, variable->type, expression());
+                            break;
+                        case op_division_assignment:
+                            ++ token;
+                            result = evaluateDivisionAssignment(variable->value, variable->type, expression());
+                            break;
+                        case op_module_assignment:
+                            ++ token;
+                            result = evaluateModuleAssignment(variable->value, variable->type, expression());
+                            break;
+                        case op_pow_assignment:
+                            ++ token;
+                            result = evaluatePowAssignment(variable->value, variable->type, expression());
+                            break;
+                        case op_radix_assignment:
+                            ++ token;
+                            result = evaluateRadixAssignment(variable->value, variable->type, expression());
+                            break;
+                        default:
+                            -- token;
+                            break;
+                    }
+                }
+            }
+            break;
         case tok_punctuation:
             if(* token -> value == L'('){
+                ++ token;
                 result = expression();
                 expectedToken(tok_punctuation, tok_punctuation + L')', L")");
             }
             break;
         case tok_operator:
             switch((token ++)->intern){
+                case op_negative_assignment:{
+                    variable_p variable = findVariable(token->intern);
+                    if(!variable){
+                        printError(undeclared_variable, *token, token->value);
+                        exit(EXIT_FAILURE);
+                    }
+                    result = evaluateNegativeAssignment(variable->value, variable->type, -1);
+                    break;
+                }
+                case op_increment:{
+                    variable_p variable = findVariable(token->intern);
+                    if(!variable){
+                        printError(undeclared_variable, *token, token->value);
+                        exit(EXIT_FAILURE);
+                    }
+                    result = evaluateIncrement(variable->value, variable->type, -1);
+                    break;
+                }
+                case op_decrement:{
+                    variable_p variable = findVariable(token->intern);
+                    if(!variable){
+                        printError(undeclared_variable, *token, token->value);
+                        exit(EXIT_FAILURE);
+                    }
+                    result = evaluateDecrement(variable->value, variable->type, -1);
+                    break;
+                }
                 case op_addition:
                     result = term();
                     break;
@@ -556,6 +664,10 @@ static result_t term(void){
                 printError(illegal_number, *token, token->value);
             }
             break;
+        case tok_string:
+            result.type = type_string;
+            result.value.getString = token->value;
+            break;
         default:
             break;
     }
@@ -572,7 +684,6 @@ static void evaluateValue(result_t*);
 
 result_t expression(void){
     result_t result;
-
     evaluateMultiPurpose(&result);
     return result;
 }
@@ -587,6 +698,7 @@ static void evaluateMultiPurpose(result_t *current){
     while(token->intern > multi_purpose_operators && token->intern < logic_operators){
         lvalue = * current;
         op = token->intern;
+        ++ token;
         evaluateLogic(&rvalue);
 
         switch(op){
@@ -632,6 +744,7 @@ static void evaluateLogic(result_t *current){
     while(token->intern > logic_operators && token->intern < relational_operators){
         lvalue = * current;
         op = token->intern;
+        ++ token;
         evaluateRelational(&rvalue);
 
         switch(op){
@@ -668,6 +781,7 @@ static void evaluateRelational(result_t *current){
     while(token->intern > relational_operators && token->intern < arithmetic_operators){
         lvalue = * current;
         op = token->intern;
+        ++ token;
         evaluateArithmeticSum(&rvalue);
 
         switch(op){
@@ -716,6 +830,7 @@ static void evaluateArithmeticSum(result_t *current){
     while(token->intern >= op_addition && token->intern <= op_subtraction){
         lvalue = * current;
         op = token->intern;
+        ++ token;
         evaluateArithmeticMul(&rvalue);
 
         switch(op){
@@ -743,6 +858,7 @@ static void evaluateArithmeticMul(result_t *current){
     while(token->intern >= op_multiply && token->intern <= op_module){
         lvalue = * current;
         op = token->intern;
+        ++ token;
         evaluateArithmeticPow(&rvalue);
 
         switch(op){
@@ -773,6 +889,7 @@ static void evaluateArithmeticPow(result_t *current){
     while(token->intern >= op_pow && token->intern <= op_radix){
         lvalue = * current;
         op = token->intern;
+        ++ token;
         evaluateValue(&rvalue);
 
         switch(op){
@@ -791,6 +908,5 @@ static void evaluateArithmeticPow(result_t *current){
 }
 
 static void evaluateValue(result_t *current){
-    ++ token;
     *current = term();
 }
