@@ -6,7 +6,7 @@
 
 result_t expression(void);
 
-static INLINE result_t evaluateAssignment(pointer_t value, type_value type, result_t result){
+INLINE result_t evaluateAssignment(pointer_t value, type_value type, result_t result){
     assign_pointer(result, value, type);
     return result;
 }
@@ -189,13 +189,6 @@ static result_t evaluateTilde(result_t result){
         result.value.getReal = (real_t)( ~ (int)result.value.getReal);
     }
     return result;
-}
-
-static result_t evaluateQuery(result_t condition, result_t case_true, result_t case_false){
-    if(condition.type == type_boolean){
-        return condition.value.getBoolean ? case_true : case_false;
-    }
-    return condition;
 }
 
 static result_t evaluateDoubleQuery(result_t left, result_t right){
@@ -498,14 +491,6 @@ static result_t evaluateRadix(result_t left, result_t right){
     return result;
 }
 
-static result_t evaluateDot(result_t left, token_t *right){
-    return left;
-}
-
-static result_t evaluateQueryDot(result_t left, token_t *right){
-    return left;
-}
-
 static result_t evaluateBrackets(result_t stream, result_t element){
     result_t ret = {};
     if(stream.type == type_array && element.type == type_real){
@@ -597,6 +582,11 @@ static result_t term(void){
                             ++ token;
                             result = evaluateRadixAssignment(variable->value, variable->type, expression());
                             break;
+                        case op_bracket_open:
+                            ++ token;
+                            result = evaluateBrackets(result, expression());
+                            expectedToken(tok_operator, op_bracket_close, L"]");
+                            break;
                         default:
                             -- token;
                             break;
@@ -648,12 +638,10 @@ static result_t term(void){
                     result.value.getReal *= -1.0;
                     break;
                 case op_not:
-                    result = term();
-                    result.value.getBoolean = result.value.getBoolean ? False : True;
+                    result = evaluateNot(term());
                     break;
                 case op_tilde:
-                    result = term();
-                    result.value.getReal = (real_t)( ~ (int)result.value.getReal);
+                    result = evaluateTilde(term());
                     break;
             }
             break;

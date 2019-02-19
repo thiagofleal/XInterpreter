@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include "header.h"
 
+extern INLINE result_t evaluateAssignment(pointer_t, type_value, result_t);
+
 uint_t count_var;
 
 variable_t var[num_variables];
@@ -49,6 +51,12 @@ void declareVariable(void){
 
             ++ token;
             ++ count_var;
+
+            if(token->intern == op_assignment){
+                ++ token;
+                evaluateAssignment(var[count_var - 1].value, var[count_var - 1].type, expression());
+                ++ token;
+            }
         }
         while(token->intern == L',' + tok_punctuation);
 

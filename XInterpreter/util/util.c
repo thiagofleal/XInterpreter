@@ -160,6 +160,8 @@ void assign_result(pointer_t src, result_t* dest, int type){
         case type_object:
             dest->value.getPointer = *(object_p*)src;
             break;
+        default:
+            break;
     }
 }
 
