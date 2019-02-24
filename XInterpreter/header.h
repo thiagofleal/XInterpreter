@@ -23,9 +23,9 @@ typedef char* string_t;
 typedef wchar_t* wstring_t;
 
 typedef struct{
-    pointer_t memory;
     uint_t count;
-}gc_pointer;
+    char memory[0];
+}heap_t, *heap_p;
 
 enum number{
     num_args = 50,
@@ -40,7 +40,6 @@ enum number{
 
 enum default_values{
     default_arguments = 100,
-    default_array = -1
 };
 
 typedef enum{
@@ -115,7 +114,8 @@ typedef enum{
     type_string,
     type_array,
     type_object,
-    type_args
+    type_args,
+    type_null
 }type_value;
 
 typedef enum{
@@ -263,17 +263,18 @@ typedef struct{
 }result_t;
 
 typedef struct{
+    heap_p value;
+    type_value type;
+    size_t size;
+    int dimensions;
+    uint_t length;
+}array_t, *array_p;
+
+typedef struct{
     uint_t identifier;
     type_value type;
     pointer_t value;
 }variable_t, *variable_p;
-
-typedef struct{
-    gc_pointer value;
-    type_value type;
-    size_t size;
-    int dimensions;
-}array_t, *array_p;
 
 typedef struct{
     uint_t identifier;
@@ -322,7 +323,7 @@ struct str_class{
 
 typedef struct{
     class_p pclass;
-    gc_pointer value;
+    heap_p value;
 }object_t, *object_p;
 
 typedef enum{
@@ -336,6 +337,8 @@ typedef enum{
     undeclared_method,
     undeclared_class,
     illegal_number,
+    array_assignment_error,
+    array_bounds_error,
     syntax_error
 }type_error;
 

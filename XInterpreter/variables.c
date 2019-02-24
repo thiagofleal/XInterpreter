@@ -1,11 +1,23 @@
 #include <stdlib.h>
 #include "header.h"
+#include "util/util.h"
 
 extern INLINE result_t evaluateAssignment(pointer_t, type_value, result_t);
 
 uint_t count_var;
 
 variable_t var[num_variables];
+
+static const size_t size[] = {
+    [type_boolean] = sizeof(boolean_t),
+    [type_character] = sizeof(character_t),
+    [type_integer] = sizeof(integer_t),
+    [type_real] = sizeof(real_t),
+    [type_string] = sizeof(wstring_t),
+    [type_array] = sizeof(array_p),
+    [type_object] = sizeof(object_p),
+    [type_args] = sizeof(pointer_t)
+};
 
 static uint_t dimensions(void){
     register int count = 0;
@@ -18,35 +30,31 @@ static uint_t dimensions(void){
 }
 
 void declareVariable(void){
-
-    static const size_t size[] = {
-        [type_boolean] = sizeof(boolean_t),
-        [type_character] = sizeof(character_t),
-        [type_integer] = sizeof(integer_t),
-        [type_real] = sizeof(real_t),
-        [type_string] = sizeof(wstring_t),
-        [type_array] = sizeof(array_p),
-        [type_object] = sizeof(object_p),
-        [type_args] = sizeof(pointer_t)
-    };
-
     uint_t type = token->intern - tok_reserved;
 
     if(type >= type_boolean && type <= type_object){
-        int d, dim = dimensions();
+        int d, count_dimensions = dimensions();
         expectedToken(tok_punctuation, L':' + tok_punctuation, L":");
         ++ token;
         var[count_var].identifier = token->intern;
 
         do{
-            d = dim + dimensions();
+            d = count_dimensions + dimensions();
 
             if(d){
-                // Array
+                var[count_var].type = type_array;
+                var[count_var].value = calloc(sizeof(array_t), 1);
+                check(var[count_var].value);
+                ((array_p)var[count_var].value)->dimensions = d;
+                ((array_p)var[count_var].value)->type = type;
+                ((array_p)var[count_var].value)->size = size[type];
+                ((array_p)var[count_var].value)->length = 0;
+                ((array_p)var[count_var].value)->value = NULL;
             }
             else{
                 var[count_var].type = type;
                 var[count_var].value = calloc(size[type], 1);
+                check(var[count_var].value);
             }
 
             ++ token;

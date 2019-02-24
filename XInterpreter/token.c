@@ -1,7 +1,6 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include "header.h"
 #include "util/util.h"
 
@@ -561,7 +560,7 @@ void initTokens(const string_t file, const wstring_t content){
     getLine(prog);
 
     token = malloc(count * sizeof(token_t));
-    assert(token);
+    check(token);
 
     for(i = 0; i < count; i++){
         token[i] = getToken();

@@ -494,14 +494,20 @@ static result_t evaluateRadix(result_t left, result_t right){
 static result_t evaluateBrackets(result_t stream, result_t element){
     result_t ret = {};
     if(stream.type == type_array && element.type == type_real){
-        array_t *array = stream.value.getPointer;
+        array_p array = stream.value.getPointer;
         int type = array->dimensions - 1 ? type_array : array->type;
-        pointer_t value = array->value.memory + array->size * (size_t)element.value.getReal;
-        assign_result(
-            value,
-            &ret,
-            type
-        );
+
+        if((uint_t)element.value.getReal < array->length){
+            pointer_t value = array->value + array->size * (size_t)element.value.getReal;
+            assign_result(
+                value,
+                &ret,
+                type
+            );
+        }
+        else{
+            printError(array_bounds_error, *token, NULL);
+        }
     }
     return ret;
 }
@@ -521,7 +527,7 @@ static result_t term(void){
                     result.value.getBoolean = False;
                     break;
                 case key_null:
-                    result.type = type_object;
+                    result.type = type_null;
                     result.value.getPointer = NULL;
                     break;
             }

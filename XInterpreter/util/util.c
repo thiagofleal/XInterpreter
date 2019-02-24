@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
@@ -90,6 +91,11 @@ int list_search(list l, pointer_t value, size_t size){
     return -1;
 }
 
+void __check_fail__(string_t error){
+    fprintf(stderr, "%s\n", error);
+    exit(EXIT_FAILURE);
+}
+
 string_t new_string(char str[]){
     return strcpy(malloc((strlen(str) + 1) * sizeof(char)), str);
 }
@@ -134,6 +140,29 @@ int wstring_near(wstring_t str1, wstring_t str2){
         ++ str1; ++ str2;
     }
     return 1;
+}
+
+heap_p new_heap(size_t memory){
+    heap_p heap = calloc(sizeof(heap_t) + memory, 1);
+    heap->count = 0;
+    return heap;
+}
+
+void assign_heap(heap_p *dest, heap_p *src){
+    if(* dest){
+        if(! -- (* dest)->count){
+            free(* dest);
+        }
+    }
+    ++ (* src)->count;
+    * dest = * src;
+}
+
+void assign_heap_null(heap_p *dest){
+    if(! -- (* dest)->count){
+        free(* dest);
+    }
+    * dest = NULL;
 }
 
 void assign_result(pointer_t src, result_t* dest, int type){
@@ -183,7 +212,19 @@ void assign_pointer(result_t src, pointer_t dest, int type){
             *(wstring_t*)dest = src.value.getString;
             break;
         case type_array:
-            *(array_p*)dest = (array_t*)src.value.getPointer;
+            if((array_p)dest){
+                if(((array_p)dest)->dimensions == ((array_p)src.value.getPointer)->dimensions){
+                    assign_heap(&((array_p)dest)->value, &((array_p)src.value.getPointer)->value);
+                    ((array_p)dest)->length = ((array_p)src.value.getPointer)->length;
+                }
+                else{
+                    printError(array_assignment_error, *token, NULL);
+                }
+            }
+            else{
+                assign_heap_null(&((array_p)dest)->value);
+                ((array_p)dest)->length = 0;
+            }
             break;
         case type_object:
             *(object_p*)dest = (object_t*)src.value.getPointer;
