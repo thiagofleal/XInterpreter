@@ -142,16 +142,22 @@ int wstring_near(wstring_t str1, wstring_t str2){
     return 1;
 }
 
-heap_p new_heap(size_t memory){
+heap_p new_heap(size_t memory, void (* destroy)(pointer_t)){
     heap_p heap = calloc(sizeof(heap_t) + memory, 1);
     heap->count = 0;
+    heap->destroy = destroy;
     return heap;
 }
 
 void assign_heap(heap_p *dest, heap_p *src){
     if(* dest){
         if(! -- (* dest)->count){
-            free(* dest);
+            if((*dest)->destroy){
+                (*dest)->destroy(* dest);
+            }
+            else{
+                free(* dest);
+            }
         }
     }
     ++ (* src)->count;
@@ -163,6 +169,38 @@ void assign_heap_null(heap_p *dest){
         free(* dest);
     }
     * dest = NULL;
+}
+
+void free_value(type_value type, pointer_t value){
+    switch(type){
+        case type_string:
+            free(*(wstring_t*)value);
+            break;
+        case type_array:
+            break;
+        case type_object:
+            break;
+        case type_args:
+            break;
+        default:
+            break;
+    }
+}
+
+void free_result(result_t result){
+    switch(result.type){
+        case type_string:
+            free(result.value.getString);
+            break;
+        case type_array:
+            break;
+        case type_object:
+            break;
+        case type_args:
+            break;
+        default:
+            break;
+    }
 }
 
 void assign_result(pointer_t src, result_t* dest, int type){

@@ -1,11 +1,11 @@
 #include <stdlib.h>
+#include <setjmp.h>
 #include "header.h"
 #include "util/util.h"
 
 extern INLINE result_t evaluateAssignment(pointer_t, type_value, result_t);
 
-uint_t count_var;
-
+static uint_t count_var;
 variable_t var[num_variables];
 
 static const size_t size[] = {
@@ -29,12 +29,12 @@ static uint_t dimensions(void){
     return count;
 }
 
-void declareVariable(void){
+void declareVariable(pointer_t buf){
     uint_t type = token->intern - tok_reserved;
 
     if(type >= type_boolean && type <= type_object){
         int d, count_dimensions = dimensions();
-        expectedToken(tok_punctuation, L':' + tok_punctuation, L":");
+        expectedToken(tok_punctuation, punctuation(L':'), L":");
         ++ token;
         var[count_var].identifier = token->intern;
 
@@ -62,11 +62,11 @@ void declareVariable(void){
 
             if(token->intern == op_assignment){
                 ++ token;
-                evaluateAssignment(var[count_var - 1].value, var[count_var - 1].type, expression());
+                evaluateAssignment(var[count_var - 1].value, var[count_var - 1].type, expression(buf));
                 ++ token;
             }
         }
-        while(token->intern == L',' + tok_punctuation);
+        while(token->intern == punctuation(L','));
 
         -- token;
     }
@@ -80,4 +80,20 @@ variable_p findVariable(uint_t identifier){
         }
     }
     return NULL;
+}
+
+INLINE uint_t countVariables(void){
+    return count_var;
+}
+
+static void freeVariable(variable_p variable){
+    free_value(variable->type, variable->value);
+    free(variable->value);
+}
+
+void destroyVariables(uint_t until){
+    while(until < count_var){
+        -- count_var;
+        freeVariable(var + count_var);
+    }
 }

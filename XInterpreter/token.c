@@ -75,7 +75,7 @@ static int getLine(wstring_t origin){
     return line;
 }
 
-static wstring_t __key_words[] = {
+wstring_t __key_words[] = {
     [key_boolean] = L"",
     [key_character] = L"",
     [key_integer] = L"",
@@ -215,7 +215,7 @@ static token_t getToken(void){
         * pwstr = 0;
         ret.type = tok_punctuation;
         ret.value = new_wstring(wstr);
-        ret.intern = * wstr + tok_punctuation;
+        ret.intern = punctuation(* wstr);
         return ret;
     }
 

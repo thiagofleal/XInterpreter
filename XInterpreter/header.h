@@ -24,6 +24,7 @@ typedef wchar_t* wstring_t;
 
 typedef struct{
     uint_t count;
+    void (* destroy)(pointer_t);
     char memory[0];
 }heap_t, *heap_p;
 
@@ -98,13 +99,15 @@ enum key_words{
     key_virtual
 };
 
+#define punctuation(c)  c + tok_punctuation
+
 typedef struct{
     type_token type;
     wstring_t value;
     int intern;
     int line;
     string_t file;
-}token_t;
+}token_t, *token_p;
 
 typedef enum{
     type_boolean = 0,
@@ -284,7 +287,7 @@ typedef struct{
 }function_t, *function_p;
 
 typedef struct{
-    function_t *pfunction;
+    function_p pfunction;
     result_t params[num_args];
     result_t result;
 }function;
@@ -298,7 +301,7 @@ typedef enum{
 typedef struct{
     variable_t super;
     visibility_mode visibility;
-}attribute_t;
+}attribute_t, *attribute_p;
 
 typedef struct{
     function_t super;
@@ -322,8 +325,10 @@ struct str_class{
 };
 
 typedef struct{
+    heap_t super;
     class_p pclass;
-    heap_p value;
+    class_p base;
+    attribute_p attributes;
 }object_t, *object_p;
 
 typedef enum{
@@ -339,6 +344,7 @@ typedef enum{
     illegal_number,
     array_assignment_error,
     array_bounds_error,
+    not_boolean_expression,
     syntax_error
 }type_error;
 
@@ -347,7 +353,11 @@ extern token_t *token;
 extern INLINE void printError(type_error error, token_t from, wstring_t message);
 extern INLINE void expectedToken(type_token type, int intern, wstring_t value);
 
-extern result_t expression(void);
+extern INLINE uint_t countVariables(void);
+
+extern result_t expression(pointer_t);
+extern void declareVariable(pointer_t);
 extern variable_p findVariable(uint_t);
+extern void destroyVariables(uint_t);
 
 #endif // __INTERPRETER_HEADER_H__

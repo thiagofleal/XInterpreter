@@ -1,10 +1,11 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <setjmp.h>
 #include "header.h"
 #include "util/util.h"
 
-result_t expression(void);
+static pointer_t __buf;
 
 INLINE result_t evaluateAssignment(pointer_t value, type_value type, result_t result){
     assign_pointer(result, value, type);
@@ -153,8 +154,7 @@ static result_t evaluateRadixAssignment(pointer_t value, type_value type, result
     return result;
 }
 
-static result_t evaluateAt(result_t left, result_t right){
-    result_t result;
+static result_t evaluateAt(result_t result){
     return result;
 }
 
@@ -533,7 +533,7 @@ static result_t term(void){
             }
             break;
         case tok_identifier:
-            if((token + 1) -> intern == L'(' + tok_punctuation){
+            if((token + 1) -> intern == punctuation(L'(')){
                 // function
             }
             else{
@@ -549,7 +549,7 @@ static result_t term(void){
                     switch((++ token) -> intern){
                         case op_assignment:
                             ++ token;
-                            result = evaluateAssignment(variable->value, variable->type, expression());
+                            result = evaluateAssignment(variable->value, variable->type, expression(__buf));
                             break;
                         case op_negative_assignment:
                             result = evaluateNegativeAssignment(variable->value, variable->type, 1);
@@ -562,35 +562,35 @@ static result_t term(void){
                             break;
                         case op_addition_assignment:
                             ++ token;
-                            result = evaluateAdditionAssignment(variable->value, variable->type, expression());
+                            result = evaluateAdditionAssignment(variable->value, variable->type, expression(__buf));
                             break;
                         case op_subtraction_assignment:
                             ++ token;
-                            result = evaluateSubtractionAssignment(variable->value, variable->type, expression());
+                            result = evaluateSubtractionAssignment(variable->value, variable->type, expression(__buf));
                             break;
                         case op_multiply_assignment:
                             ++ token;
-                            result = evaluateMultiplyAssignment(variable->value, variable->type, expression());
+                            result = evaluateMultiplyAssignment(variable->value, variable->type, expression(__buf));
                             break;
                         case op_division_assignment:
                             ++ token;
-                            result = evaluateDivisionAssignment(variable->value, variable->type, expression());
+                            result = evaluateDivisionAssignment(variable->value, variable->type, expression(__buf));
                             break;
                         case op_module_assignment:
                             ++ token;
-                            result = evaluateModuleAssignment(variable->value, variable->type, expression());
+                            result = evaluateModuleAssignment(variable->value, variable->type, expression(__buf));
                             break;
                         case op_pow_assignment:
                             ++ token;
-                            result = evaluatePowAssignment(variable->value, variable->type, expression());
+                            result = evaluatePowAssignment(variable->value, variable->type, expression(__buf));
                             break;
                         case op_radix_assignment:
                             ++ token;
-                            result = evaluateRadixAssignment(variable->value, variable->type, expression());
+                            result = evaluateRadixAssignment(variable->value, variable->type, expression(__buf));
                             break;
                         case op_bracket_open:
                             ++ token;
-                            result = evaluateBrackets(result, expression());
+                            result = evaluateBrackets(result, expression(__buf));
                             expectedToken(tok_operator, op_bracket_close, L"]");
                             break;
                         default:
@@ -603,8 +603,8 @@ static result_t term(void){
         case tok_punctuation:
             if(* token -> value == L'('){
                 ++ token;
-                result = expression();
-                expectedToken(tok_punctuation, tok_punctuation + L')', L")");
+                result = expression(__buf);
+                expectedToken(tok_punctuation, punctuation(L')'), L")");
             }
             break;
         case tok_operator:
@@ -649,6 +649,9 @@ static result_t term(void){
                 case op_tilde:
                     result = evaluateTilde(term());
                     break;
+                case op_at:
+                    result = evaluateAt(term());
+                    break;
             }
             break;
         case tok_constant:
@@ -676,9 +679,15 @@ static void evaluateArithmeticMul(result_t*);
 static void evaluateArithmeticPow(result_t*);
 static void evaluateValue(result_t*);
 
-result_t expression(void){
+result_t expression(pointer_t buf){
     result_t result;
-    evaluateMultiPurpose(&result);
+    pointer_t backup = __buf;
+
+    __buf = buf;
+    if(!setjmp(buf)){
+        evaluateMultiPurpose(&result);
+    }
+    __buf = backup;
     return result;
 }
 
@@ -696,9 +705,6 @@ static void evaluateMultiPurpose(result_t *current){
         evaluateLogic(&rvalue);
 
         switch(op){
-            case op_at:
-                * current = evaluateAt(lvalue, rvalue);
-                break;
             case op_fence:
                 * current = evaluateFence(lvalue, rvalue);
                 break;

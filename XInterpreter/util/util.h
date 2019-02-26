@@ -33,9 +33,12 @@ wstring_t new_wstring(wchar_t[]);
 int string_near(string_t, string_t);
 int wstring_near(wstring_t, wstring_t);
 
-heap_p new_heap(size_t);
+heap_p new_heap(size_t, void (*)(pointer_t));
 void assign_heap(heap_p*, heap_p*);
 void assign_heap_null(heap_p*);
+
+void free_value(type_value, pointer_t);
+void free_result(result_t);
 
 void assign_result(pointer_t, result_t*, int);
 void assign_pointer(result_t, pointer_t, int);

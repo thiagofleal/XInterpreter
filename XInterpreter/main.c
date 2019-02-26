@@ -15,6 +15,9 @@ static wstring_t wstr_error[] = {
     [undeclared_attribute] = L"",
     [undeclared_method] = L"",
     [undeclared_class] = L"",
+    [illegal_number] = L"",
+    [array_assignment_error] = L"",
+    [array_bounds_error] = L"",
     [syntax_error] = L""
 };
 
@@ -22,8 +25,8 @@ INLINE void printError(type_error error, token_t from, wstring_t message){
     fwprintf(
         stderr,
         message
-            ? L"\n -> %hs : %d >> %ls\n -> %ls\n"
-            : L"\n -> %hs : %d >> %ls\n -> %ls: %ls\n",
+            ? L"\n -> %hs : %d >> %ls\n -> %s\n"
+            : L"\n -> %hs : %d >> %ls\n -> %s: %ls\n",
         from.file,
         from.line,
         from.value,
@@ -39,7 +42,6 @@ INLINE void expectedToken(type_token type, int intern, wstring_t value){
 }
 
 extern void registerKeyWord(int, wstring_t);
-extern void declareVariable(void);
 
 int main(int argc, string_t argv[]){
     return 0;
