@@ -29,6 +29,16 @@ static result_t evaluateNegativeAssignment(pointer_t value, type_value type, int
 
 static result_t evaluateIncrement(pointer_t value, type_value type, int order){
     result_t result = {.type = type_real};
+    if(type == type_character){
+        if(order < 0){
+            *(character_t*)value = *(character_t*)value + 1.0;
+            result.value.getReal = *(character_t*)value;
+        }
+        else{
+            result.value.getReal = *(character_t*)value;
+            *(character_t*)value = *(character_t*)value + 1.0;
+        }
+    }
     if(type == type_integer){
         if(order < 0){
             *(integer_t*)value = *(integer_t*)value + 1.0;
@@ -54,6 +64,16 @@ static result_t evaluateIncrement(pointer_t value, type_value type, int order){
 
 static result_t evaluateDecrement(pointer_t value, type_value type, int order){
     result_t result = {.type = type_real};
+    if(type == type_character){
+        if(order < 0){
+            *(character_t*)value = *(character_t*)value - 1.0;
+            result.value.getReal = *(character_t*)value;
+        }
+        else{
+            result.value.getReal = *(character_t*)value;
+            *(character_t*)value = *(character_t*)value - 1.0;
+        }
+    }
     if(type == type_integer){
         if(order < 0){
             *(integer_t*)value = *(integer_t*)value - 1.0;
@@ -297,8 +317,6 @@ static result_t evaluateEqual(result_t left, result_t right){
                 ret.value.getBoolean = left.value.getBoolean == right.value.getBoolean ? True : False;
                 break;
             case type_character:
-                ret.value.getBoolean = left.value.getCharacter == right.value.getCharacter ? True : False;
-                break;
             case type_real:
                 ret.value.getBoolean = left.value.getReal == right.value.getReal ? True : False;
                 break;
@@ -329,8 +347,6 @@ static result_t evaluateDifferent(result_t left, result_t right){
                 ret.value.getBoolean = left.value.getBoolean != right.value.getBoolean ? True : False;
                 break;
             case type_character:
-                ret.value.getBoolean = left.value.getCharacter != right.value.getCharacter ? True : False;
-                break;
             case type_real:
                 ret.value.getBoolean = left.value.getReal != right.value.getReal ? True : False;
                 break;

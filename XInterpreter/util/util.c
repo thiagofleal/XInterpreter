@@ -209,7 +209,7 @@ void assign_result(pointer_t src, result_t* dest, int type){
             dest->value.getBoolean = *(boolean_t*)src;
             break;
         case type_character:
-            dest->value.getCharacter = *(character_t*)src;
+            dest->value.getReal = (real_t)*(character_t*)src;
             break;
         case type_integer:
             dest->type = type_real;
@@ -238,7 +238,7 @@ void assign_pointer(result_t src, pointer_t dest, int type){
             *(boolean_t*)dest = src.value.getBoolean;
             break;
         case type_character:
-            *(character_t*)dest = src.value.getCharacter;
+            *(character_t*)dest = (character_t)src.value.getReal;
             break;
         case type_integer:
             *(integer_t*)dest = (integer_t)src.value.getReal;

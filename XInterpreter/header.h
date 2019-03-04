@@ -254,7 +254,6 @@ typedef enum{
 
 typedef union{
     boolean_t getBoolean;
-    character_t getCharacter;
     real_t getReal;
     wstring_t getString;
     pointer_t getPointer;
@@ -281,16 +280,11 @@ typedef struct{
 
 typedef struct{
     uint_t identifier;
-    int count_params;
-    int param_type[num_args];
+    uint_t count_params;
+    variable_t param[num_args];
+    result_t result;
     token_t *enter;
 }function_t, *function_p;
-
-typedef struct{
-    function_p pfunction;
-    result_t params[num_args];
-    result_t result;
-}function;
 
 typedef enum{
     mode_public,

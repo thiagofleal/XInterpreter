@@ -97,3 +97,48 @@ void destroyVariables(uint_t until){
         freeVariable(var + count_var);
     }
 }
+
+void declareParameters(function_p pfunction){
+    register int count_parameters = 0;
+
+    do{
+        uint_t type = token->intern - tok_reserved;
+        if(type >= type_boolean && type <= type_object){
+            int d = dimensions();
+            expectedToken(tok_punctuation, punctuation(L':'), L":");
+            ++ token;
+            pfunction->param[count_parameters].identifier = token->intern;
+
+            if(d){
+                pfunction->param[count_parameters].type = type_array;
+                pfunction->param[count_parameters].value = calloc(sizeof(array_t), 1);
+                check(pfunction->param[count_parameters].value);
+                ((array_p)pfunction->param[count_parameters].value)->dimensions = d;
+                ((array_p)pfunction->param[count_parameters].value)->type = type;
+                ((array_p)pfunction->param[count_parameters].value)->size = size[type];
+                ((array_p)pfunction->param[count_parameters].value)->length = 0;
+                ((array_p)pfunction->param[count_parameters].value)->value = NULL;
+            }
+            else{
+                pfunction->param[count_parameters].type = type;
+                pfunction->param[count_parameters].value = calloc(size[type], 1);
+                check(pfunction->param[count_parameters].value);
+            }
+
+            ++ token;
+            ++ count_parameters;
+        }
+    }while(token->intern == punctuation(L','));
+
+     -- token;
+}
+
+void allocateParameters(function_p func, result_t arguments[]){
+    register int i;
+
+    for(i = 0; i < func->count_params; i++){
+        var[count_var] = func->param[i];
+        assign_pointer(arguments[i], var[count_var].value, var[count_var].type);
+        ++ count_var;
+    }
+}
