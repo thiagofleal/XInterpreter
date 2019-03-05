@@ -40,7 +40,7 @@ void assign_heap_null(heap_p*);
 void free_value(type_value, pointer_t);
 void free_result(result_t);
 
-void assign_result(pointer_t, result_t*, int);
-void assign_pointer(result_t, pointer_t, int);
+void assign_result(pointer_t, result_p, int);
+void assign_pointer(result_p, pointer_t, int);
 
 #endif // __INTERPRETER_UTIL_H__

@@ -29,33 +29,36 @@ static uint_t dimensions(void){
     return count;
 }
 
+static void declare(variable_p var, type_value type, uint_t identifier, int count_dimensions){
+    var->identifier = token->intern;
+    if(count_dimensions){
+        var->type = type_array;
+        var->value = calloc(sizeof(array_t), 1);
+        check(var->value);
+        ((array_p)var->value)->dimensions = count_dimensions;
+        ((array_p)var->value)->type = type;
+        ((array_p)var->value)->size = size[type];
+        ((array_p)var->value)->length = 0;
+        ((array_p)var->value)->value = NULL;
+    }
+    else{
+        var->type = type;
+        var->value = calloc(size[type], 1);
+        check(var->value);
+    }
+}
+
 void declareVariable(pointer_t buf){
     uint_t type = token->intern - tok_reserved;
 
     if(type >= type_boolean && type <= type_object){
-        int d, count_dimensions = dimensions();
+        int count_dimensions = dimensions(), identifier;
         expectedToken(tok_punctuation, punctuation(L':'), L":");
         ++ token;
-        var[count_var].identifier = token->intern;
+        identifier = token->intern;
 
         do{
-            d = count_dimensions + dimensions();
-
-            if(d){
-                var[count_var].type = type_array;
-                var[count_var].value = calloc(sizeof(array_t), 1);
-                check(var[count_var].value);
-                ((array_p)var[count_var].value)->dimensions = d;
-                ((array_p)var[count_var].value)->type = type;
-                ((array_p)var[count_var].value)->size = size[type];
-                ((array_p)var[count_var].value)->length = 0;
-                ((array_p)var[count_var].value)->value = NULL;
-            }
-            else{
-                var[count_var].type = type;
-                var[count_var].value = calloc(size[type], 1);
-                check(var[count_var].value);
-            }
+            declare(var + count_var, type, identifier, count_dimensions + dimensions());
 
             ++ token;
             ++ count_var;
@@ -92,10 +95,22 @@ static void freeVariable(variable_p variable){
 }
 
 void destroyVariables(uint_t until){
-    while(until < count_var){
+    while(count_var > until){
         -- count_var;
         freeVariable(var + count_var);
     }
+}
+
+variable_p backupVariables(uint_t begin, uint_t length){
+    register int i;
+    variable_p bk = malloc(length * sizeof(variable_t));
+    check(bk);
+
+    for(i = 0; i < length; i++){
+        bk[i] = var[i + length];
+    }
+
+    return bk;
 }
 
 void declareParameters(function_p pfunction){
@@ -104,33 +119,20 @@ void declareParameters(function_p pfunction){
     do{
         uint_t type = token->intern - tok_reserved;
         if(type >= type_boolean && type <= type_object){
-            int d = dimensions();
+            int d = dimensions(), identifier;
             expectedToken(tok_punctuation, punctuation(L':'), L":");
             ++ token;
-            pfunction->param[count_parameters].identifier = token->intern;
+            identifier = token->intern;
 
-            if(d){
-                pfunction->param[count_parameters].type = type_array;
-                pfunction->param[count_parameters].value = calloc(sizeof(array_t), 1);
-                check(pfunction->param[count_parameters].value);
-                ((array_p)pfunction->param[count_parameters].value)->dimensions = d;
-                ((array_p)pfunction->param[count_parameters].value)->type = type;
-                ((array_p)pfunction->param[count_parameters].value)->size = size[type];
-                ((array_p)pfunction->param[count_parameters].value)->length = 0;
-                ((array_p)pfunction->param[count_parameters].value)->value = NULL;
-            }
-            else{
-                pfunction->param[count_parameters].type = type;
-                pfunction->param[count_parameters].value = calloc(size[type], 1);
-                check(pfunction->param[count_parameters].value);
-            }
+            declare(pfunction->param + count_parameters, type, identifier, d);
 
             ++ token;
             ++ count_parameters;
         }
     }while(token->intern == punctuation(L','));
 
-     -- token;
+    pfunction->count_params = count_parameters;
+    -- token;
 }
 
 void allocateParameters(function_p func, result_t arguments[]){
@@ -138,7 +140,7 @@ void allocateParameters(function_p func, result_t arguments[]){
 
     for(i = 0; i < func->count_params; i++){
         var[count_var] = func->param[i];
-        assign_pointer(arguments[i], var[count_var].value, var[count_var].type);
+        assign_pointer(arguments + i, var[count_var].value, var[count_var].type);
         ++ count_var;
     }
 }

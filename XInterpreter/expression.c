@@ -8,7 +8,7 @@
 static pointer_t __buf;
 
 INLINE result_t evaluateAssignment(pointer_t value, type_value type, result_t result){
-    assign_pointer(result, value, type);
+    assign_pointer(&result, value, type);
     return result;
 }
 
@@ -104,7 +104,7 @@ static result_t evaluateAdditionAssignment(pointer_t value, type_value type, res
     if(type == type_real){
         result.value.getReal = *(real_t*)value + result.value.getReal;
     }
-    assign_pointer(result, value, type);
+    assign_pointer(&result, value, type);
     return result;
 }
 
@@ -115,7 +115,7 @@ static result_t evaluateSubtractionAssignment(pointer_t value, type_value type, 
     if(type == type_real){
         result.value.getReal = *(real_t*)value - result.value.getReal;
     }
-    assign_pointer(result, value, type);
+    assign_pointer(&result, value, type);
     return result;
 }
 
@@ -126,7 +126,7 @@ static result_t evaluateMultiplyAssignment(pointer_t value, type_value type, res
     if(type == type_real){
         result.value.getReal = *(real_t*)value * result.value.getReal;
     }
-    assign_pointer(result, value, type);
+    assign_pointer(&result, value, type);
     return result;
 }
 
@@ -137,7 +137,7 @@ static result_t evaluateDivisionAssignment(pointer_t value, type_value type, res
     if(type == type_real){
         result.value.getReal = *(real_t*)value / result.value.getReal;
     }
-    assign_pointer(result, value, type);
+    assign_pointer(&result, value, type);
     return result;
 }
 
@@ -148,7 +148,7 @@ static result_t evaluateModuleAssignment(pointer_t value, type_value type, resul
     if(type == type_real){
         result.value.getReal = ((int)*(real_t*)value) % (int)result.value.getReal;
     }
-    assign_pointer(result, value, type);
+    assign_pointer(&result, value, type);
     return result;
 }
 
@@ -159,7 +159,7 @@ static result_t evaluatePowAssignment(pointer_t value, type_value type, result_t
     if(type == type_real){
         result.value.getReal = pow(*(real_t*)value, result.value.getReal);
     }
-    assign_pointer(result, value, type);
+    assign_pointer(&result, value, type);
     return result;
 }
 
@@ -170,7 +170,7 @@ static result_t evaluateRadixAssignment(pointer_t value, type_value type, result
     if(type == type_real){
         result.value.getReal = pow(*(real_t*)value, 1.0 / result.value.getReal);
     }
-    assign_pointer(result, value, type);
+    assign_pointer(&result, value, type);
     return result;
 }
 

@@ -99,7 +99,7 @@ enum key_words{
     key_virtual
 };
 
-#define punctuation(c)  c + tok_punctuation
+#define punctuation(c)  (c + tok_punctuation)
 
 typedef struct{
     type_token type;
@@ -118,7 +118,8 @@ typedef enum{
     type_array,
     type_object,
     type_args,
-    type_null
+    type_null,
+    num_types
 }type_value;
 
 typedef enum{
@@ -257,12 +258,12 @@ typedef union{
     real_t getReal;
     wstring_t getString;
     pointer_t getPointer;
-}value_t;
+}value_t, *value_p;
 
 typedef struct{
     type_value type;
     value_t value;
-}result_t;
+}result_t, *result_p;
 
 typedef struct{
     heap_p value;
@@ -282,9 +283,14 @@ typedef struct{
     uint_t identifier;
     uint_t count_params;
     variable_t param[num_args];
-    result_t result;
     token_t *enter;
 }function_t, *function_p;
+
+typedef struct{
+    function_t casts[num_types];
+    uint_t count_actions;
+    function_t actions[30];
+}type_t, *type_p;
 
 typedef enum{
     mode_public,

@@ -74,7 +74,7 @@ void executeBlock(void){
     }
 }
 
-static void findEndOfBlock(void){
+void findEndOfBlock(void){
     if(token->intern == punctuation(L'{')){
         register int count = 1;
         do{

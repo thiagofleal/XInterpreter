@@ -232,28 +232,28 @@ void assign_result(pointer_t src, result_t* dest, int type){
     }
 }
 
-void assign_pointer(result_t src, pointer_t dest, int type){
+void assign_pointer(result_p src, pointer_t dest, int type){
     switch(type){
         case type_boolean:
-            *(boolean_t*)dest = src.value.getBoolean;
+            *(boolean_t*)dest = src->value.getBoolean;
             break;
         case type_character:
-            *(character_t*)dest = (character_t)src.value.getReal;
+            *(character_t*)dest = (character_t)src->value.getReal;
             break;
         case type_integer:
-            *(integer_t*)dest = (integer_t)src.value.getReal;
+            *(integer_t*)dest = (integer_t)src->value.getReal;
             break;
         case type_real:
-            *(real_t*)dest = src.value.getReal;
+            *(real_t*)dest = src->value.getReal;
             break;
         case type_string:
-            *(wstring_t*)dest = src.value.getString;
+            *(wstring_t*)dest = src->value.getString;
             break;
         case type_array:
             if((array_p)dest){
-                if(((array_p)dest)->dimensions == ((array_p)src.value.getPointer)->dimensions){
-                    assign_heap(&((array_p)dest)->value, &((array_p)src.value.getPointer)->value);
-                    ((array_p)dest)->length = ((array_p)src.value.getPointer)->length;
+                if(((array_p)dest)->dimensions == ((array_p)src->value.getPointer)->dimensions){
+                    assign_heap(&((array_p)dest)->value, &((array_p)src->value.getPointer)->value);
+                    ((array_p)dest)->length = ((array_p)src->value.getPointer)->length;
                 }
                 else{
                     printError(array_assignment_error, *token, NULL);
@@ -265,7 +265,7 @@ void assign_pointer(result_t src, pointer_t dest, int type){
             }
             break;
         case type_object:
-            *(object_p*)dest = (object_t*)src.value.getPointer;
+            *(object_p*)dest = (object_t*)src->value.getPointer;
             break;
     }
 }
