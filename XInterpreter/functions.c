@@ -1,11 +1,15 @@
+#include <stdlib.h>
 #include "header.h"
 #include "util/util.h"
 
 extern void findEndOfBlock(void);
+extern result_t getReturn(void);
 extern void declareParameters(function_p);
 extern void allocateParameters(function_p, result_t[]);
+extern uint_t backupVariables(uint_t, variable_p);
+extern void restaureVariables(variable_p, uint_t);
 
-static int count_functions;
+static uint_t count_functions;
 function_t functions[num_functions];
 
 void declareFunction(void){
@@ -46,7 +50,7 @@ boolean_t compatible_types(variable_p param, result_p arg){
 function_p findFunction(uint_t identifier, int count_arguments){
     register int i;
 
-    for(i = count_arguments - 1; i >= 0; i--){
+    for(i = count_functions - 1; i >= 0; i--){
         if(functions[i].identifier == identifier){
             if(functions[i].count_params - count_arguments >= default_arguments){
                 return functions + i;
@@ -71,4 +75,41 @@ uint_t getArguments(result_t dest[], pointer_t buf){
 
     -- token;
     return count;
+}
+
+void executeFunction(function_p function, result_t args[], result_p ret, pointer_t buf){
+    uint_t count_vars = countVariables();
+    uint_t global = countGlobalVariables();
+    uint_t length = count_vars - global;
+    variable_p bk = malloc(length * sizeof(variable_t));
+    token_p bktoken = token;
+
+    check(bk);
+
+    backupVariables(global, bk);
+    check(args);
+
+    allocateParameters(function, args);
+    token = function->enter;
+    executeBlock();
+    * ret = getReturn();
+    destroyVariables(count_vars);
+    restaureVariables(bk, length);
+    free(bk);
+    token = bktoken;
+}
+
+void callFunction(token_t identifier, result_p ret, pointer_t buf){
+    result_t args[num_args];
+    uint_t count_args = getArguments(args, buf);
+    function_p function = findFunction(identifier.intern, count_args);
+
+    if(function){
+        executeFunction(function, args, ret, buf);
+    }
+    else{
+        wchar_t str[50];
+        swprintf(str, L"%s(<%d>)", identifier.value, count_args);
+        printError(undeclared_function, identifier, str);
+    }
 }

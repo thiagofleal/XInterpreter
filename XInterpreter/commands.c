@@ -10,7 +10,13 @@ static void executeDoWhile(pointer_t);
 static void executeWhile(pointer_t);
 static void executeFor(pointer_t);
 
-void executeCommand(pointer_t buf){
+static result_t current_return;
+
+INLINE result_t getReturn(void){
+    return current_return;
+}
+
+int executeCommand(pointer_t buf){
     switch(token->intern){
         case key_boolean:
         case key_character:
@@ -42,17 +48,18 @@ void executeCommand(pointer_t buf){
         case key_using:
             break;
         case key_return:
-            break;
+            return 0;
         case key_call:
             break;
         case key_try:
             break;
         case key_throw:
             break;
-        default:{
+        default:
             free_result(expression(buf));
-        }
     }
+
+    return 1;
 }
 
 void executeBlock(void){
@@ -69,7 +76,7 @@ void executeBlock(void){
                 -- count;
                 ++ token;
             }
-            executeCommand(buf);
+            count *= executeCommand(buf);
         }while(count);
     }
 }

@@ -94,23 +94,32 @@ static void freeVariable(variable_p variable){
     free(variable->value);
 }
 
-void destroyVariables(uint_t until){
-    while(count_var > until){
+void destroyVariables(uint_t since){
+    while(count_var > since){
         -- count_var;
         freeVariable(var + count_var);
     }
 }
 
-variable_p backupVariables(uint_t begin, uint_t length){
+uint_t backupVariables(uint_t begin, variable_p bk){
     register int i;
-    variable_p bk = malloc(length * sizeof(variable_t));
-    check(bk);
+    register uint_t length = count_var - begin;
 
     for(i = 0; i < length; i++){
         bk[i] = var[i + length];
     }
 
-    return bk;
+    count_var = begin;
+    return length;
+}
+
+void restaureVariables(variable_p bk, uint_t length){
+    register int i;
+    check(bk);
+
+    for(i = 0; i < length; i++){
+        var[i + length] = bk[i];
+    }
 }
 
 void declareParameters(function_p pfunction){

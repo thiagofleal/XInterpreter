@@ -287,7 +287,6 @@ typedef struct{
 }function_t, *function_p;
 
 typedef struct{
-    function_t casts[num_types];
     uint_t count_actions;
     function_t actions[30];
 }type_t, *type_p;
@@ -348,16 +347,19 @@ typedef enum{
     syntax_error
 }type_error;
 
-extern token_t *token;
+extern token_p token;
 
 extern INLINE void printError(type_error error, token_t from, wstring_t message);
 extern INLINE void expectedToken(type_token type, int intern, wstring_t value);
 
 extern INLINE uint_t countVariables(void);
+extern INLINE uint_t countGlobalVariables(void);
 
 extern result_t expression(pointer_t);
 extern void declareVariable(pointer_t);
 extern variable_p findVariable(uint_t);
 extern void destroyVariables(uint_t);
+extern void declareFunction(void);
+extern void executeBlock(void);
 
 #endif // __INTERPRETER_HEADER_H__
