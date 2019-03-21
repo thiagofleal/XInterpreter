@@ -1,9 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <setjmp.h>
 #include "header.h"
 #include "util/util.h"
-
-extern void initTokens(const string_t, const wstring_t);
 
 static wstring_t wstr_error[] = {
     [expected_token] = L"",
@@ -25,8 +24,8 @@ INLINE void printError(type_error error, token_t from, wstring_t message){
     fwprintf(
         stderr,
         message
-            ? L"\n -> %hs : %d >> %ls\n -> %s\n"
-            : L"\n -> %hs : %d >> %ls\n -> %s: %ls\n",
+            ? L"\n -> %s: %i\n >> Before \"%s\" -> %s: %s\n"
+            : L"\n -> %s: %i\n >> Before \"%s\" -> %s\n",
         from.file,
         from.line,
         from.value,
@@ -42,6 +41,32 @@ INLINE void expectedToken(type_token type, int intern, wstring_t value){
 }
 
 extern void registerKeyWord(int, wstring_t);
+
+wstring_t open_file(wstring_t fileName){
+    register int count = 0;
+    wchar_t wc;
+    wstring_t ret, aux;
+    FILE *f = _wfopen(fileName, L"r");
+
+    check(f);
+
+    while(!feof(f)){
+        fwscanf(f, L"%c", &wc);
+        ++ count;
+    }
+
+    rewind(f);
+    ret = aux = malloc(count * sizeof(wchar_t));
+    check(ret);
+
+    while(!feof(f)){
+        fwscanf(f, L"%c", &wc);
+        * aux ++ = wc;
+    }
+
+    * -- aux = L'\0';
+    return ret;
+}
 
 int main(int argc, string_t argv[]){
     return 0;

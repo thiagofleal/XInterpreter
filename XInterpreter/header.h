@@ -106,7 +106,7 @@ typedef struct{
     wstring_t value;
     int intern;
     int line;
-    string_t file;
+    wstring_t file;
 }token_t, *token_p;
 
 typedef enum{
@@ -354,12 +354,18 @@ extern INLINE void expectedToken(type_token type, int intern, wstring_t value);
 
 extern INLINE uint_t countVariables(void);
 extern INLINE uint_t countGlobalVariables(void);
+extern INLINE uint_t internIdentifier(wstring_t);
 
-extern result_t expression(pointer_t);
+extern void initTokens(const wstring_t, const wstring_t);
 extern void declareVariable(pointer_t);
-extern variable_p findVariable(uint_t);
 extern void destroyVariables(uint_t);
 extern void declareFunction(void);
 extern void executeBlock(void);
+extern void preScan(pointer_t);
+extern void executeFunction(function_p, result_t[], result_p, pointer_t);
+
+extern result_t expression(pointer_t);
+extern variable_p findVariable(uint_t);
+extern function_p findFunction(uint_t, int);
 
 #endif // __INTERPRETER_HEADER_H__

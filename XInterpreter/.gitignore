@@ -4,6 +4,7 @@
 bin/
 obj/
 
+*.x
 *.o
 *.a
 *.exe

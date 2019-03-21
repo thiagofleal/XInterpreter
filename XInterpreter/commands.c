@@ -9,6 +9,7 @@ static void executeIf(pointer_t);
 static void executeDoWhile(pointer_t);
 static void executeWhile(pointer_t);
 static void executeFor(pointer_t);
+static void executeReturn(pointer_t);
 
 static result_t current_return;
 
@@ -48,6 +49,7 @@ int executeCommand(pointer_t buf){
         case key_using:
             break;
         case key_return:
+            executeReturn(buf);
             return 0;
         case key_call:
             break;
@@ -215,4 +217,12 @@ static void executeFor(pointer_t buf){
     }
 
     destroyVariables(count_var);
+}
+
+static void executeReturn(pointer_t buf){
+    if((token + 1)->intern == punctuation(L':')){
+        ++ token;
+        current_return = expression(buf);
+        expectedToken(tok_punctuation, punctuation(L';'), L";");
+    }
 }

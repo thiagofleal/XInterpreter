@@ -6,7 +6,7 @@
 
 token_t *token;
 
-static string_t pfile;
+static wstring_t pfile;
 static wstring_t prog;
 
 static list identifiers = NULL;
@@ -124,6 +124,10 @@ static uint_t keyWord(wstring_t word){
     return -1;
 }
 
+INLINE uint_t internIdentifier(wstring_t wstr){
+    return list_search(identifiers, wstr, wcslen(wstr) + sizeof(wchar_t));
+}
+
 static token_t getToken(void){
     token_t ret = {};
     wchar_t wstr[2000] = L"";
@@ -203,7 +207,6 @@ static token_t getToken(void){
         * pwstr = 0;
         ret.type = tok_string;
         ret.value = new_wstring(wstr);
-        wprintf(L" -> %s\n", ret.value);
         ret.intern = tok_string;
         ++ prog;
         return ret;
@@ -526,10 +529,10 @@ static token_t getToken(void){
     }
     else{
         ret.type = tok_identifier;
-        ret.intern = list_search(identifiers, wstr, wcslen(wstr) + sizeof(wchar_t));
+        ret.intern = internIdentifier(wstr);
         if(ret.intern == -1){
             list_add(identifiers, new_wstring(wstr));
-            ret.intern = list_search(identifiers, wstr, wcslen(wstr) + sizeof(wchar_t));
+            ret.intern = internIdentifier(wstr);
         }
         ret.intern += tok_identifier;
     }
@@ -541,7 +544,7 @@ INLINE void registerKeyWord(int index, wstring_t value){
     __key_words[index] = value;
 }
 
-void initTokens(const string_t file, const wstring_t content){
+void initTokens(const wstring_t file, const wstring_t content){
     register int i, count;
     token_t tok;
 
