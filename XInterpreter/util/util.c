@@ -39,14 +39,17 @@ static void delete_node(node_t *node){
     free(node);
 }
 
-void list_add(list l, pointer_t value){
+int list_add(list l, pointer_t value){
+    register int ret = l->size;
     node_t *node = new_node(value);
-    if(l->size++){
+    if(ret){
         list_end(l)->next = node;
     }
     else{
         l->begin = node;
     }
+    ++ l->size;
+    return ret;
 }
 
 static node_t * access_node(list l, int index){
@@ -85,7 +88,7 @@ int list_search(list l, pointer_t value, size_t size){
     register int i;
     node_t *node = l->begin;
     if(l->size)
-        for(i = 0; node->next; i++, node = node->next)
+        for(i = 0; i < l->size; i++, node = node->next)
             if(!memcmp(node->value, value, size))
                 return i;
     return -1;
@@ -96,11 +99,11 @@ void __check_fail__(string_t error){
     exit(EXIT_FAILURE);
 }
 
-string_t new_string(char str[]){
+INLINE string_t new_string(char str[]){
     return strcpy(malloc((strlen(str) + 1) * sizeof(char)), str);
 }
 
-wstring_t new_wstring(wchar_t wstr[]){
+INLINE wstring_t new_wstring(wchar_t wstr[]){
     return wcscpy(malloc((wcslen(wstr) + 1) * sizeof(wchar_t)), wstr);
 }
 

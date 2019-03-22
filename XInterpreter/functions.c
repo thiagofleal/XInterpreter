@@ -15,7 +15,9 @@ function_t functions[num_functions];
 void declareFunction(void){
     functions[count_functions].identifier = token->intern;
     expectedToken(tok_punctuation, punctuation(L'('), L"(");
-    declareParameters(functions + count_functions);
+    if((token + 1) -> type == tok_reserved){
+        declareParameters(functions + count_functions);
+    }
     expectedToken(tok_punctuation, punctuation(L')'), L")");
     functions[count_functions].enter = ++ token;
     ++ count_functions;
@@ -52,10 +54,10 @@ function_p findFunction(uint_t identifier, int count_arguments){
 
     for(i = count_functions - 1; i >= 0; i--){
         if(functions[i].identifier == identifier){
-            if(functions[i].count_params - count_arguments >= default_arguments){
+            if(functions[i].count_params == count_arguments){
                 return functions + i;
             }
-            else if(functions[i].count_params == count_arguments){
+            else if(functions[i].count_params - count_arguments >= default_arguments){
                 return functions + i;
             }
         }
@@ -67,13 +69,15 @@ function_p findFunction(uint_t identifier, int count_arguments){
 uint_t getArguments(result_t dest[], pointer_t buf){
     register uint_t count = 0;
 
-    do{
-        dest[count++] = expression(buf);
-        ++ token;
-    }
-    while(token->intern == punctuation(L','));
+    if((token + 1)->intern != punctuation(L')')){
+        do{
+            dest[count++] = expression(buf);
+            ++ token;
+        }
+        while(token->intern == punctuation(L','));
 
-    -- token;
+        -- token;
+    }
     return count;
 }
 
@@ -87,11 +91,9 @@ void executeFunction(function_p function, result_t args[], result_p ret, pointer
     check(bk);
 
     backupVariables(global, bk);
-    check(args);
-
     allocateParameters(function, args);
     token = function->enter;
-    executeBlock();
+    executeBlock(buf);
     * ret = getReturn();
     destroyVariables(count_vars);
     restaureVariables(bk, length);
@@ -99,17 +101,19 @@ void executeFunction(function_p function, result_t args[], result_p ret, pointer
     token = bktoken;
 }
 
-void callFunction(token_t identifier, result_p ret, pointer_t buf){
+void callFunction(token_p identifier, result_p ret, pointer_t buf){
     result_t args[num_args];
     uint_t count_args = getArguments(args, buf);
-    function_p function = findFunction(identifier.intern, count_args);
+    function_p function = findFunction(identifier->intern, count_args);
+
+    expectedToken(tok_punctuation, punctuation(L')'), L")");
 
     if(function){
         executeFunction(function, args, ret, buf);
     }
     else{
         wchar_t str[50];
-        swprintf(str, L"%s(<%d>)", identifier.value, count_args);
-        printError(undeclared_function, identifier, str);
+        swprintf(str, L"%s(<%d>)", identifier->value, count_args);
+        printError(undeclared_function, *identifier, str);
     }
 }

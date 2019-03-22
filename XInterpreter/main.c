@@ -5,27 +5,43 @@
 #include "util/util.h"
 
 static wstring_t wstr_error[] = {
-    [expected_token] = L"",
-    [non_terminated_single_quot] = L"",
-    [non_terminated_double_quot] = L"",
-    [non_terminated_commentary] = L"",
-    [undeclared_variable] = L"",
-    [undeclared_function] = L"",
-    [undeclared_attribute] = L"",
-    [undeclared_method] = L"",
-    [undeclared_class] = L"",
-    [illegal_number] = L"",
-    [array_assignment_error] = L"",
-    [array_bounds_error] = L"",
-    [syntax_error] = L""
+    #ifdef __TEST__
+        [expected_token] = L"expected token",
+        [non_terminated_single_quot] = L"non terminated single quotes",
+        [non_terminated_double_quot] = L"non terminated double quotes",
+        [non_terminated_commentary] = L"non terminated commentary",
+        [undeclared_variable] = L"undeclared variable",
+        [undeclared_function] = L"undeclared function",
+        [undeclared_attribute] = L"undeclared attribute",
+        [undeclared_method] = L"undeclared method",
+        [undeclared_class] = L"undeclared class",
+        [illegal_number] = L"illegal number",
+        [array_assignment_error] = L"array assignment error",
+        [array_bounds_error] = L"array bounds error",
+        [syntax_error] = L"syntax error"
+    #else
+        [expected_token] = L"",
+        [non_terminated_single_quot] = L"",
+        [non_terminated_double_quot] = L"",
+        [non_terminated_commentary] = L"",
+        [undeclared_variable] = L"",
+        [undeclared_function] = L"",
+        [undeclared_attribute] = L"",
+        [undeclared_method] = L"",
+        [undeclared_class] = L"",
+        [illegal_number] = L"",
+        [array_assignment_error] = L"",
+        [array_bounds_error] = L"",
+        [syntax_error] = L""
+    #endif // __TEST__
 };
 
 INLINE void printError(type_error error, token_t from, wstring_t message){
     fwprintf(
         stderr,
         message
-            ? L"\n -> %s: %i\n >> Before \"%s\" -> %s: %s\n"
-            : L"\n -> %s: %i\n >> Before \"%s\" -> %s\n",
+            ? L"\n -> %s: %i\n\t>> <%s> -> %s: %s\n"
+            : L"\n -> %s: %i\n\t>> <%s> -> %s\n",
         from.file,
         from.line,
         from.value,

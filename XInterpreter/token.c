@@ -76,47 +76,87 @@ static int getLine(wstring_t origin){
 }
 
 wstring_t __key_words[] = {
-    [key_boolean] = L"",
-    [key_character] = L"",
-    [key_integer] = L"",
-    [key_real] = L"",
-    [key_string] = L"",
-    [key_object] = L"",
-    [key_args] = L"",
-    [key_true] = L"",
-    [key_false] = L"",
-    [key_null] = L"",
-    [key_if] = L"",
-    [key_else] = L"",
-    [key_do] = L"",
-    [key_while] = L"",
-    [key_for] = L"",
-    [key_each] = L"",
-    [key_using] = L"",
-    [key_return] = L"",
-    [key_call] = L"",
-    [key_include] = L"",
-    [key_block] = L"",
-    [key_try] = L"",
-    [key_catch] = L"",
-    [key_finally] = L"",
-    [key_throw] = L"",
-    [key_class] = L"",
-    [key_extend] = L"",
-    [key_public] = L"",
-    [key_protected] = L"",
-    [key_private] = L"",
-    [key_constructor] = L"",
-    [key_destructor] = L"",
-    [key_new] = L"",
-    [key_this] = L"",
-    [key_base] = L"",
-    [key_virtual] = L""
+    #ifdef __TEST__
+        [key_boolean] = L"Boolean",
+        [key_character] = L"Character",
+        [key_integer] = L"Integer",
+        [key_real] = L"Real",
+        [key_string] = L"String",
+        [key_object] = L"Object",
+        [key_args] = L"Arguments",
+        [key_true] = L"true",
+        [key_false] = L"false",
+        [key_null] = L"Null",
+        [key_if] = L"if",
+        [key_else] = L"else",
+        [key_do] = L"do",
+        [key_while] = L"while",
+        [key_for] = L"for",
+        [key_each] = L"each",
+        [key_using] = L"using",
+        [key_return] = L"Return",
+        [key_call] = L"__call__",
+        [key_include] = L"Include",
+        [key_block] = L"Block",
+        [key_try] = L"try",
+        [key_catch] = L"catch",
+        [key_finally] = L"finally",
+        [key_throw] = L"throw",
+        [key_class] = L"Class",
+        [key_extend] = L"Extend",
+        [key_public] = L"Public",
+        [key_protected] = L"Protected",
+        [key_private] = L"Private",
+        [key_constructor] = L"constructor",
+        [key_destructor] = L"destructor",
+        [key_new] = L"new",
+        [key_this] = L"this",
+        [key_base] = L"base",
+        [key_virtual] = L"virtual"
+        ,[key_print] = L"print"
+    #else
+        [key_boolean] = L"",
+        [key_character] = L"",
+        [key_integer] = L"",
+        [key_real] = L"",
+        [key_string] = L"",
+        [key_object] = L"",
+        [key_args] = L"",
+        [key_true] = L"",
+        [key_false] = L"",
+        [key_null] = L"",
+        [key_if] = L"",
+        [key_else] = L"",
+        [key_do] = L"",
+        [key_while] = L"",
+        [key_for] = L"",
+        [key_each] = L"",
+        [key_using] = L"",
+        [key_return] = L"",
+        [key_call] = L"",
+        [key_include] = L"",
+        [key_block] = L"",
+        [key_try] = L"",
+        [key_catch] = L"",
+        [key_finally] = L"",
+        [key_throw] = L"",
+        [key_class] = L"",
+        [key_extend] = L"",
+        [key_public] = L"",
+        [key_protected] = L"",
+        [key_private] = L"",
+        [key_constructor] = L"",
+        [key_destructor] = L"",
+        [key_new] = L"",
+        [key_this] = L"",
+        [key_base] = L"",
+        [key_virtual] = L""
+    #endif // __TEST__
 };
 
 static uint_t keyWord(wstring_t word){
     register int i;
-    for(i = key_boolean; i <= key_virtual; i++){
+    for(i = key_boolean; i < count_key_words; i++){
         if(!wcscmp(word, __key_words[i])){
             return i;
         }
@@ -124,14 +164,23 @@ static uint_t keyWord(wstring_t word){
     return -1;
 }
 
-INLINE uint_t internIdentifier(wstring_t wstr){
-    return list_search(identifiers, wstr, wcslen(wstr) + sizeof(wchar_t));
+uint_t internIdentifier(wstring_t wstr){
+    uint_t id = list_search(identifiers, wstr, wcslen(wstr) + sizeof(wchar_t));
+
+    if(id == -1){
+        id = list_add(identifiers, new_wstring(wstr));
+    }
+
+    return id + tok_identifier;
 }
 
 static token_t getToken(void){
     token_t ret = {};
-    wchar_t wstr[2000] = L"";
-    wstring_t pwstr = wstr;
+    static wchar_t wstr[2000];
+    static wstring_t pwstr;
+
+    pwstr = wstr;
+    * pwstr = 0;
 
     if(!identifiers){
         identifiers = new_list();
@@ -149,10 +198,14 @@ static token_t getToken(void){
         if(* (prog + 1) == L'*'){
             ++ prog;
             do{
-                while(* ++ prog != L'*')
-                    if(! * prog)
+                while(* prog != L'*'){
+                    if(! * prog){
                         printError(non_terminated_commentary, ret, NULL);
-            }while(* ++ prog != L'/');
+                    }
+                    ++ prog;
+                }
+                ++ prog;
+            }while(* prog ++ != L'/');
             return getToken();
         }
         else if(* (prog + 1) == L'/'){
@@ -530,11 +583,6 @@ static token_t getToken(void){
     else{
         ret.type = tok_identifier;
         ret.intern = internIdentifier(wstr);
-        if(ret.intern == -1){
-            list_add(identifiers, new_wstring(wstr));
-            ret.intern = internIdentifier(wstr);
-        }
-        ret.intern += tok_identifier;
     }
 
     return ret;

@@ -19,6 +19,7 @@ void preScan(pointer_t buf){
                     case key_string:
                     case key_object:
                         declareVariable(buf);
+                        expectedToken(tok_punctuation, punctuation(L';'), L";");
                         break;
                     case key_include:
                         break;
@@ -26,8 +27,9 @@ void preScan(pointer_t buf){
                         break;
                     case key_class:
                         break;
+                    default:
+                        printError(syntax_error, * token, NULL);
                 }
-                declareVariable(buf);
                 break;
             case tok_identifier:
                 declareFunction();
@@ -35,7 +37,7 @@ void preScan(pointer_t buf){
             case tok_constant:
             case tok_string:
             case tok_punctuation:
-                printError(syntax_error, *token, NULL);
+                printError(syntax_error, *token, token->value);
                 break;
             case tok_operator:
                 break;

@@ -528,7 +528,7 @@ static result_t evaluateBrackets(result_t stream, result_t element){
     return ret;
 }
 
-static result_t term(void){
+static result_t term(pointer_t buf){
     result_t result;
     wstring_t check = NULL;
     switch(token -> type){
@@ -550,7 +550,7 @@ static result_t term(void){
             break;
         case tok_identifier:
             if((token + 1) -> intern == punctuation(L'(')){
-                // function
+                callFunction(token++, &result, buf);
             }
             else{
                 variable_p variable = findVariable(token->intern);
@@ -653,20 +653,20 @@ static result_t term(void){
                     break;
                 }
                 case op_addition:
-                    result = term();
+                    result = term(buf);
                     break;
                 case op_subtraction:
-                    result = term();
+                    result = term(buf);
                     result.value.getReal *= -1.0;
                     break;
                 case op_not:
-                    result = evaluateNot(term());
+                    result = evaluateNot(term(buf));
                     break;
                 case op_tilde:
-                    result = evaluateTilde(term());
+                    result = evaluateTilde(term(buf));
                     break;
                 case op_at:
-                    result = evaluateAt(term());
+                    result = evaluateAt(term(buf));
                     break;
             }
             break;
@@ -924,5 +924,5 @@ static void evaluateArithmeticPow(result_t *current){
 }
 
 static void evaluateValue(result_t *current){
-    *current = term();
+    *current = term(__buf);
 }

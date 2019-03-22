@@ -17,7 +17,7 @@ typedef struct{
 
 list new_list(void);
 void delete_list(list);
-void list_add(list, pointer_t);
+int list_add(list, pointer_t);
 pointer_t list_access(list, int);
 pointer_t list_remove(list, int);
 int list_search(list, pointer_t, size_t);
@@ -27,8 +27,8 @@ extern void __check_fail__(string_t);
 
 #define check(t) ((t) ? (void)0 : __check_fail__("\r -> " # t))
 
-string_t new_string(char[]);
-wstring_t new_wstring(wchar_t[]);
+INLINE string_t new_string(char[]);
+INLINE wstring_t new_wstring(wchar_t[]);
 
 int string_near(string_t, string_t);
 int wstring_near(wstring_t, wstring_t);

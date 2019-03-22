@@ -96,7 +96,13 @@ enum key_words{
     key_new,
     key_this,
     key_base,
-    key_virtual
+    key_virtual,
+
+    #ifdef __TEST__
+        key_print,
+    #endif // __TEST__
+
+    count_key_words
 };
 
 #define punctuation(c)  (c + tok_punctuation)
@@ -360,9 +366,10 @@ extern void initTokens(const wstring_t, const wstring_t);
 extern void declareVariable(pointer_t);
 extern void destroyVariables(uint_t);
 extern void declareFunction(void);
-extern void executeBlock(void);
+extern void executeBlock(pointer_t);
 extern void preScan(pointer_t);
 extern void executeFunction(function_p, result_t[], result_p, pointer_t);
+extern void callFunction(token_p, result_p, pointer_t);
 
 extern result_t expression(pointer_t);
 extern variable_p findVariable(uint_t);

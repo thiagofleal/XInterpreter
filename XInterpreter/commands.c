@@ -27,6 +27,7 @@ int executeCommand(pointer_t buf){
         case key_object:
         case key_args:
             declareVariable(buf);
+            expectedToken(tok_punctuation, punctuation(L';'), L";");
             break;
         case key_if:
             ++ token;
@@ -57,6 +58,31 @@ int executeCommand(pointer_t buf){
             break;
         case key_throw:
             break;
+        #ifdef __TEST__
+        case key_print:{
+            result_t r;
+            ++ token;
+            r = expression(buf);
+
+            switch(r.type){
+                case type_character:
+                    wprintf(L"%c", (character_t)r.value.getReal);
+                    break;
+                case type_real:
+                    wprintf(L"%g", r.value.getReal);
+                    break;
+                case type_string:
+                    wprintf(L"%s", r.value.getString);
+                    break;
+                default:
+                    printError(syntax_error, *token, NULL);
+            }
+            free_result(r);
+            expectedToken(tok_punctuation, punctuation(L';'), L";");
+            ++ token;
+            break;
+        }
+        #endif // __TEST__
         default:
             free_result(expression(buf));
     }
@@ -64,22 +90,24 @@ int executeCommand(pointer_t buf){
     return 1;
 }
 
-void executeBlock(void){
-    jmp_buf buf;
-    if(!setjmp(buf)){
-        register int count = 0;
+void executeBlock(pointer_t buf){
+    register int count = 0;
 
-        do{
-            if(token->intern == punctuation(L'{')){
-                ++ count;
-                ++ token;
-            }
-            if(token->intern == punctuation(L'}')){
-                -- count;
-                ++ token;
-            }
+    for(;;){
+        if(token->intern == punctuation(L'{')){
+            ++ count;
+            ++ token;
+        }
+        if(token->intern == punctuation(L'}')){
+            -- count;
+            ++ token;
+        }
+        if(count){
             count *= executeCommand(buf);
-        }while(count);
+        }
+        else{
+            break;
+        }
     }
 }
 
@@ -103,7 +131,7 @@ static void executeIf(pointer_t buf){
     result_t cond = expression(buf);
     if(cond.type == type_boolean){
         if(cond.value.getBoolean){
-            executeBlock();
+            executeBlock(buf);
 
             if((++ token)->intern == key_else){
                 findEndOfBlock();
@@ -116,7 +144,7 @@ static void executeIf(pointer_t buf){
             findEndOfBlock();
 
             if((++ token)->intern == key_else){
-                executeBlock();
+                executeBlock(buf);
             }
             else{
                 -- token;
@@ -132,7 +160,7 @@ static void executeDoWhile(pointer_t buf){
     const token_p start = token;
     result_t cond;
     for(;;){
-        executeBlock();
+        executeBlock(buf);
         expectedToken(tok_reserved, key_while, __key_words[key_while]);
         cond = expression(buf);
 
@@ -160,7 +188,7 @@ static void executeWhile(pointer_t buf){
 
         if(cond.type == type_boolean){
             if(cond.value.getBoolean){
-                executeBlock();
+                executeBlock(buf);
                 token = start;
             }
             else{
@@ -201,7 +229,7 @@ static void executeFor(pointer_t buf){
 
         if(cond.type == type_boolean){
             if(cond.value.getBoolean){
-                executeBlock();
+                executeBlock(buf);
                 token = p2;
                 free_result(expression(buf));
                 token = p1;
