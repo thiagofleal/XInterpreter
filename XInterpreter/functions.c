@@ -57,7 +57,7 @@ function_p findFunction(uint_t identifier, int count_arguments){
             if(functions[i].count_params == count_arguments){
                 return functions + i;
             }
-            else if(functions[i].count_params - count_arguments >= default_arguments){
+            else if(functions[i].count_params >= default_arguments + count_arguments){
                 return functions + i;
             }
         }
@@ -71,13 +71,15 @@ uint_t getArguments(result_t dest[], pointer_t buf){
 
     if((token + 1)->intern != punctuation(L')')){
         do{
-            dest[count++] = expression(buf);
+            ++ token;
+            dest[count ++] = expression(buf);
             ++ token;
         }
         while(token->intern == punctuation(L','));
 
         -- token;
     }
+
     return count;
 }
 
@@ -103,9 +105,12 @@ void executeFunction(function_p function, result_t args[], result_p ret, pointer
 
 void callFunction(token_p identifier, result_p ret, pointer_t buf){
     result_t args[num_args];
-    uint_t count_args = getArguments(args, buf);
-    function_p function = findFunction(identifier->intern, count_args);
+    uint_t count_args = 0;
+    function_p function = NULL;
 
+    expectedToken(tok_punctuation, punctuation(L'('), L"(");
+    count_args = getArguments(args, buf);
+    function = findFunction(identifier->intern, count_args);
     expectedToken(tok_punctuation, punctuation(L')'), L")");
 
     if(function){

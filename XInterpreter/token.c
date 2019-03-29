@@ -112,8 +112,8 @@ wstring_t __key_words[] = {
         [key_new] = L"new",
         [key_this] = L"this",
         [key_base] = L"base",
-        [key_virtual] = L"virtual"
-        ,[key_print] = L"print"
+        [key_virtual] = L"virtual",
+        [key_print] = L"print"
     #else
         [key_boolean] = L"",
         [key_character] = L"",

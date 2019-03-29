@@ -402,7 +402,7 @@ static result_t evaluateNearOrIdentical(result_t left, result_t right){
 
 static result_t evaluateLarger(result_t left, result_t right){
     result_t ret = {.type = type_boolean, .value.getBoolean = False};
-    if(left.type == type_string && right.type == type_string){
+    if(left.type == type_real && right.type == type_real){
         ret.value.getBoolean =
             left.value.getReal > right.value.getReal
                 ? True
@@ -413,7 +413,7 @@ static result_t evaluateLarger(result_t left, result_t right){
 
 static result_t evaluateLargerOrEqual(result_t left, result_t right){
     result_t ret = {.type = type_boolean, .value.getBoolean = False};
-    if(left.type == type_string && right.type == type_string){
+    if(left.type == type_real && right.type == type_real){
         ret.value.getBoolean =
             left.value.getReal >= right.value.getReal
                 ? True
@@ -424,7 +424,7 @@ static result_t evaluateLargerOrEqual(result_t left, result_t right){
 
 static result_t evaluateLess(result_t left, result_t right){
     result_t ret = {.type = type_boolean, .value.getBoolean = False};
-    if(left.type == type_string && right.type == type_string){
+    if(left.type == type_real && right.type == type_real){
         ret.value.getBoolean =
             left.value.getReal < right.value.getReal
                 ? True
@@ -435,7 +435,7 @@ static result_t evaluateLess(result_t left, result_t right){
 
 static result_t evaluateLessOrEqual(result_t left, result_t right){
     result_t ret = {.type = type_boolean, .value.getBoolean = False};
-    if(left.type == type_string && right.type == type_string){
+    if(left.type == type_real && right.type == type_real){
         ret.value.getBoolean =
             left.value.getReal <= right.value.getReal
                 ? True
@@ -550,7 +550,7 @@ static result_t term(pointer_t buf){
             break;
         case tok_identifier:
             if((token + 1) -> intern == punctuation(L'(')){
-                callFunction(token++, &result, buf);
+                callFunction(token, &result, buf);
             }
             else{
                 variable_p variable = findVariable(token->intern);
@@ -698,10 +698,14 @@ static void evaluateValue(result_t*);
 result_t expression(pointer_t buf){
     result_t result;
     pointer_t backup = __buf;
+    wchar_t str[100];
 
     __buf = buf;
     if(!setjmp(buf)){
+        swprintf(str, L"<%s> ", token->value);
         evaluateMultiPurpose(&result);
+        swprintr(result, str + wcslen(str));
+        //wprintf(L" {%s}\n", str);
     }
     __buf = backup;
     return result;

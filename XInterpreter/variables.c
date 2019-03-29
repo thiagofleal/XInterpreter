@@ -106,10 +106,10 @@ uint_t backupVariables(uint_t begin, variable_p bk){
     register uint_t length = count_var - begin;
 
     for(i = 0; i < length; i++){
-        bk[i] = var[i + length];
+        bk[i] = var[begin + i];
     }
 
-    count_var = begin;
+    count_var = length;
     return length;
 }
 
@@ -118,15 +118,19 @@ void restaureVariables(variable_p bk, uint_t length){
     check(bk);
 
     for(i = 0; i < length; i++){
-        var[i + length] = bk[i];
+        var[count_var + i] = bk[i];
     }
+
+    count_var = length;
 }
 
 void declareParameters(function_p pfunction){
     register int count_parameters = 0;
+    uint_t type;
 
     do{
-        uint_t type = token->intern - tok_reserved;
+        ++ token;
+        type = token->intern - tok_reserved;
         if(type >= type_boolean && type <= type_object){
             int d = dimensions(), identifier;
             expectedToken(tok_punctuation, punctuation(L':'), L":");

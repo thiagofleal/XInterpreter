@@ -11,10 +11,31 @@ static void executeWhile(pointer_t);
 static void executeFor(pointer_t);
 static void executeReturn(pointer_t);
 
-static result_t current_return;
+static result_t current_return = {};
 
 INLINE result_t getReturn(void){
     return current_return;
+}
+
+int swprintr(result_t r, wstring_t str){
+    switch(r.type){
+        case type_boolean:
+            swprintf(str, L"%s", r.value.getBoolean ? L"true" : L"false");
+            break;
+        case type_character:
+            swprintf(str, L"%c", (character_t)r.value.getReal);
+            break;
+        case type_real:
+            swprintf(str, L"%g", r.value.getReal);
+            break;
+        case type_string:
+            swprintf(str, L"%s", r.value.getString);
+            break;
+        default:
+            swprintf(str, L"");
+            return 0;
+    }
+    return 1;
 }
 
 int executeCommand(pointer_t buf){
@@ -28,6 +49,7 @@ int executeCommand(pointer_t buf){
         case key_args:
             declareVariable(buf);
             expectedToken(tok_punctuation, punctuation(L';'), L";");
+            ++ token;
             break;
         case key_if:
             ++ token;
@@ -50,6 +72,7 @@ int executeCommand(pointer_t buf){
         case key_using:
             break;
         case key_return:
+            ++ token;
             executeReturn(buf);
             return 0;
         case key_call:
@@ -61,22 +84,13 @@ int executeCommand(pointer_t buf){
         #ifdef __TEST__
         case key_print:{
             result_t r;
+            wchar_t str[100];
+
             ++ token;
             r = expression(buf);
+            swprintr(r, str);
+            wprintf(str);
 
-            switch(r.type){
-                case type_character:
-                    wprintf(L"%c", (character_t)r.value.getReal);
-                    break;
-                case type_real:
-                    wprintf(L"%g", r.value.getReal);
-                    break;
-                case type_string:
-                    wprintf(L"%s", r.value.getString);
-                    break;
-                default:
-                    printError(syntax_error, *token, NULL);
-            }
             free_result(r);
             expectedToken(tok_punctuation, punctuation(L';'), L";");
             ++ token;
@@ -85,6 +99,8 @@ int executeCommand(pointer_t buf){
         #endif // __TEST__
         default:
             free_result(expression(buf));
+            expectedToken(tok_punctuation, punctuation(L';'), L";");
+            ++ token;
     }
 
     return 1;
@@ -102,11 +118,12 @@ void executeBlock(pointer_t buf){
             -- count;
             ++ token;
         }
+
         if(count){
             count *= executeCommand(buf);
         }
-        else{
-            break;
+        if(!count){
+            return;
         }
     }
 }
@@ -130,10 +147,12 @@ void findEndOfBlock(void){
 static void executeIf(pointer_t buf){
     result_t cond = expression(buf);
     if(cond.type == type_boolean){
+        ++ token;
         if(cond.value.getBoolean){
             executeBlock(buf);
 
             if((++ token)->intern == key_else){
+                ++ token;
                 findEndOfBlock();
             }
             else{
@@ -144,6 +163,7 @@ static void executeIf(pointer_t buf){
             findEndOfBlock();
 
             if((++ token)->intern == key_else){
+                ++ token;
                 executeBlock(buf);
             }
             else{
@@ -248,9 +268,8 @@ static void executeFor(pointer_t buf){
 }
 
 static void executeReturn(pointer_t buf){
-    if((token + 1)->intern == punctuation(L':')){
+    if(token->intern == punctuation(L':')){
         ++ token;
         current_return = expression(buf);
-        expectedToken(tok_punctuation, punctuation(L';'), L";");
     }
 }

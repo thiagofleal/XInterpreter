@@ -9,8 +9,10 @@
 #   define INLINE
 #endif // defined
 
-#define True 0X1
-#define False 0X0
+#define __TEST__
+
+#define True 0x1
+#define False 0x0
 
 typedef unsigned char boolean_t;
 typedef wchar_t character_t;
@@ -44,11 +46,11 @@ enum default_values{
 };
 
 typedef enum{
-    tok_reserved = 100,
-    tok_identifier = 200,
+    tok_reserved = 10,
+    tok_identifier = 500,
     tok_constant = 0,
     tok_string = 30,
-    tok_punctuation = 10,
+    tok_punctuation = 100,
     tok_operator = 20,
     tok_end = -1
 }type_token;
@@ -370,6 +372,8 @@ extern void executeBlock(pointer_t);
 extern void preScan(pointer_t);
 extern void executeFunction(function_p, result_t[], result_p, pointer_t);
 extern void callFunction(token_p, result_p, pointer_t);
+
+int swprintr(result_t, wstring_t);
 
 extern result_t expression(pointer_t);
 extern variable_p findVariable(uint_t);

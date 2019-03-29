@@ -18,6 +18,7 @@ static wstring_t wstr_error[] = {
         [illegal_number] = L"illegal number",
         [array_assignment_error] = L"array assignment error",
         [array_bounds_error] = L"array bounds error",
+        [not_boolean_expression] = L"not boolean expression",
         [syntax_error] = L"syntax error"
     #else
         [expected_token] = L"",
@@ -32,18 +33,27 @@ static wstring_t wstr_error[] = {
         [illegal_number] = L"",
         [array_assignment_error] = L"",
         [array_bounds_error] = L"",
+        [not_boolean_expression] = L"",
         [syntax_error] = L""
     #endif // __TEST__
 };
 
 INLINE void printError(type_error error, token_t from, wstring_t message){
+    static wstring_t before
+    #ifdef __TEST__
+        = L"Before"
+    #else
+        = L"";
+    #endif // __TEST__
+    ;
     fwprintf(
         stderr,
         message
-            ? L"\n -> %s: %i\n\t>> <%s> -> %s: %s\n"
-            : L"\n -> %s: %i\n\t>> <%s> -> %s\n",
+            ? L"\n -> %s: %i\n\t>> %s <%s>: %s: %s\n"
+            : L"\n -> %s: %i\n\t>> %s <%s>: %s\n",
         from.file,
         from.line,
+        before,
         from.value,
         wstr_error[error],
         message
@@ -52,7 +62,9 @@ INLINE void printError(type_error error, token_t from, wstring_t message){
 
 INLINE void expectedToken(type_token type, int intern, wstring_t value){
     if((++ token) -> intern != intern){
-        printError(expected_token, * token, value);
+        wchar_t str[100];
+        swprintf(str, L"<%s>", value);
+        printError(expected_token, * token, str);
     }
 }
 
