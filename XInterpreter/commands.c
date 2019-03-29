@@ -60,11 +60,9 @@ int executeCommand(pointer_t buf){
             executeDoWhile(buf);
             break;
         case key_while:
-            ++ token;
             executeWhile(buf);
             break;
         case key_for:
-            ++ token;
             executeFor(buf);
             break;
         case key_each:
@@ -181,7 +179,9 @@ static void executeDoWhile(pointer_t buf){
     result_t cond;
     for(;;){
         executeBlock(buf);
+        -- token;
         expectedToken(tok_reserved, key_while, __key_words[key_while]);
+        ++ token;
         cond = expression(buf);
 
         if(cond.type == type_boolean){
@@ -190,6 +190,7 @@ static void executeDoWhile(pointer_t buf){
             }
             else{
                 expectedToken(tok_punctuation, punctuation(L';'), L";");
+                ++ token;
                 break;
             }
         }
@@ -204,15 +205,18 @@ static void executeWhile(pointer_t buf){
     result_t cond;
 
     for(;;){
+        ++ token;
         cond = expression(buf);
 
         if(cond.type == type_boolean){
+            ++ token;
             if(cond.value.getBoolean){
                 executeBlock(buf);
                 token = start;
             }
             else{
                 findEndOfBlock();
+                return;
             }
         }
         else{
@@ -224,11 +228,16 @@ static void executeWhile(pointer_t buf){
 static void executeFor(pointer_t buf){
     token_p p1, p2;
     result_t cond;
-    register int count = 1;
+    register int count;
     register int count_var = countVariables();
 
     expectedToken(tok_punctuation, punctuation(L'('), L"(");
-    executeCommand(buf);
+    if((++ token)->type == tok_reserved){
+        declareVariable(buf);
+    }
+    else{
+        free_result(expression(buf));
+    }
     expectedToken(tok_punctuation, punctuation(L';'), L";");
     p1 = ++ token;
 
@@ -236,6 +245,7 @@ static void executeFor(pointer_t buf){
         cond = expression(buf);
         expectedToken(tok_punctuation, punctuation(L';'), L";");
         p2 = ++ token;
+        count = 1;
 
         while(count){
             ++ token;
@@ -248,6 +258,7 @@ static void executeFor(pointer_t buf){
         }
 
         if(cond.type == type_boolean){
+            ++ token;
             if(cond.value.getBoolean){
                 executeBlock(buf);
                 token = p2;
@@ -256,6 +267,7 @@ static void executeFor(pointer_t buf){
             }
             else{
                 findEndOfBlock();
+                ++ token;
                 break;
             }
         }
