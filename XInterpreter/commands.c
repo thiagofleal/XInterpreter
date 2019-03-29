@@ -164,9 +164,6 @@ static void executeIf(pointer_t buf){
                 ++ token;
                 executeBlock(buf);
             }
-            else{
-                -- token;
-            }
         }
     }
     else{
