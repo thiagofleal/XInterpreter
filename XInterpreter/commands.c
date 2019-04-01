@@ -12,9 +12,14 @@ static void executeFor(pointer_t);
 static void executeReturn(pointer_t);
 
 static result_t current_return = {};
+static boolean_t exec = True;
 
 INLINE result_t getReturn(void){
     return current_return;
+}
+
+INLINE void setExec(boolean_t value){
+    exec = value;
 }
 
 int swprintr(result_t r, wstring_t str){
@@ -39,6 +44,9 @@ int swprintr(result_t r, wstring_t str){
 }
 
 int executeCommand(pointer_t buf){
+    if(!exec){
+        return 0;
+    }
     switch(token->intern){
         case key_boolean:
         case key_character:
@@ -70,7 +78,7 @@ int executeCommand(pointer_t buf){
         case key_using:
             break;
         case key_return:
-            ++ token;
+            //++ token;
             executeReturn(buf);
             return 0;
         case key_call:
@@ -80,20 +88,24 @@ int executeCommand(pointer_t buf){
         case key_throw:
             break;
         #ifdef __TEST__
-        case key_print:{
-            result_t r;
-            wchar_t str[100];
+        case key_print:
+            do{
+                result_t r;
+                wchar_t str[100];
 
-            ++ token;
-            r = expression(buf);
-            swprintr(r, str);
-            wprintf(str);
+                ++ token;
+                r = expression(buf);
+                swprintr(r, str);
+                wprintf(str);
 
-            free_result(r);
+                free_result(r);
+            }
+            while((++ token) -> intern == punctuation(L','));
+
+            -- token;
             expectedToken(tok_punctuation, punctuation(L';'), L";");
             ++ token;
             break;
-        }
         #endif // __TEST__
         default:
             free_result(expression(buf));
@@ -107,7 +119,7 @@ int executeCommand(pointer_t buf){
 void executeBlock(pointer_t buf){
     register int count = 0;
 
-    for(;;){
+    while(exec){
         if(token->intern == punctuation(L'{')){
             ++ count;
             ++ token;
@@ -174,7 +186,7 @@ static void executeIf(pointer_t buf){
 static void executeDoWhile(pointer_t buf){
     const token_p start = token;
     result_t cond;
-    for(;;){
+    while(exec){
         executeBlock(buf);
         -- token;
         expectedToken(tok_reserved, key_while, __key_words[key_while]);
@@ -201,7 +213,7 @@ static void executeWhile(pointer_t buf){
     const token_p start = token;
     result_t cond;
 
-    for(;;){
+    while(exec){
         ++ token;
         cond = expression(buf);
 
@@ -238,7 +250,7 @@ static void executeFor(pointer_t buf){
     expectedToken(tok_punctuation, punctuation(L';'), L";");
     p1 = ++ token;
 
-    for(;;){
+    while(exec){
         cond = expression(buf);
         expectedToken(tok_punctuation, punctuation(L';'), L";");
         p2 = ++ token;
@@ -277,8 +289,10 @@ static void executeFor(pointer_t buf){
 }
 
 static void executeReturn(pointer_t buf){
-    if(token->intern == punctuation(L':')){
-        ++ token;
+    exec = False;
+    if((token + 1)->intern == punctuation(L':')){
+        ++ token; ++ token;
         current_return = expression(buf);
     }
+    expectedToken(tok_punctuation, punctuation(L';'), L";");
 }

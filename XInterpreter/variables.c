@@ -109,7 +109,7 @@ uint_t backupVariables(uint_t begin, variable_p bk){
         bk[i] = var[begin + i];
     }
 
-    count_var = length;
+    count_var = begin;
     return length;
 }
 
@@ -121,7 +121,7 @@ void restaureVariables(variable_p bk, uint_t length){
         var[count_var + i] = bk[i];
     }
 
-    count_var = length;
+    count_var += length;
 }
 
 void declareParameters(function_p pfunction){

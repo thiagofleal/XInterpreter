@@ -8,6 +8,7 @@ extern void declareParameters(function_p);
 extern void allocateParameters(function_p, result_t[]);
 extern uint_t backupVariables(uint_t, variable_p);
 extern void restaureVariables(variable_p, uint_t);
+extern INLINE void setExec(boolean_t);
 
 static uint_t count_functions;
 function_t functions[num_functions];
@@ -101,6 +102,7 @@ void executeFunction(function_p function, result_t args[], result_p ret, pointer
     restaureVariables(bk, length);
     free(bk);
     token = bktoken;
+    setExec(True);
 }
 
 void callFunction(token_p identifier, result_p ret, pointer_t buf){

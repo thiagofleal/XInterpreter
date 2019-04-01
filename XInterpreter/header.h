@@ -9,7 +9,7 @@
 #   define INLINE
 #endif // defined
 
-#define __TEST__
+//#define __TEST__
 
 #define True 0x1
 #define False 0x0

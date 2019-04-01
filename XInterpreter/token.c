@@ -165,7 +165,7 @@ static uint_t keyWord(wstring_t word){
 }
 
 uint_t internIdentifier(wstring_t wstr){
-    uint_t id = list_search(identifiers, wstr, wcslen(wstr) + sizeof(wchar_t));
+    uint_t id = list_search(identifiers, wstr, (wcslen(wstr) + 1) * sizeof(wchar_t));
 
     if(id == -1){
         id = list_add(identifiers, new_wstring(wstr));
