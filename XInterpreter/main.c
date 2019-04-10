@@ -97,35 +97,5 @@ wstring_t open_file(wstring_t fileName){
 }
 
 int main(int argc, string_t argv[]){
-    #ifdef __TEST__
-        result_t res;
-        uint_t mainId;
-        function_p mainFunc;
-        jmp_buf buf;
-
-        wstring_t file = L"test.x";
-        wstring_t prog = open_file(file);
-
-        initTokens(file, prog);
-        free(prog);
-        prog = NULL;
-
-        if(setjmp(buf)){
-            return EXIT_FAILURE;
-        }
-
-        preScan(buf);
-        mainId = internIdentifier(L"Main");
-        mainFunc = findFunction(mainId, 0);
-
-        if(!mainFunc){
-            printError(undeclared_function, *token, L"Main(<0>)");
-        }
-        else{
-            result_t args[num_args];
-            executeFunction(mainFunc, args, &res, buf);
-        }
-    #endif // __TEST__
-
     return 0;
 }

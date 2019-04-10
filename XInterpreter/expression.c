@@ -233,7 +233,40 @@ static result_t evaluateDoubleLeft(result_t left, result_t right){
         result.value.getReal = (real_t)((int)left.value.getReal << (int)right.value.getReal);
     }
     if(left.type == type_string){
-        // Future implementation
+        static wstring_t wstr1 = NULL;
+        static wstring_t wstr2 = NULL;
+
+        size_t size1 = 0;
+        size_t size2 = 0;
+
+        if(wstr1){ free(wstr1); }
+        if(wstr2){ free(wstr2); }
+
+        size1 = wcslen(left.value.getString) + 1;
+
+        if(right.type == type_string){
+            size2 = wcslen(right.value.getString) + 1;
+        }
+        else{
+            size2 = 100;
+        }
+
+        size1 *= sizeof(wchar_t);
+        size2 *= sizeof(wchar_t);
+
+        wstr1 = malloc(size1);
+        check(wstr1);
+        wstr2 = malloc(size2);
+        check(wstr2);
+
+        size1 = swprintr(left, wstr1) * sizeof(wchar_t);
+        size2 = swprintr(right, wstr2) * sizeof(wchar_t);
+
+        result.value.getString = malloc(size1 + size2 + 1);
+        check(result.value.getString);
+
+        swprintf(result.value.getString, L"%s%s", wstr1, wstr2);
+        result.type = type_string;
     }
     return result;
 }

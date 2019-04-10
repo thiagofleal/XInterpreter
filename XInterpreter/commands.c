@@ -25,22 +25,17 @@ INLINE void setExec(boolean_t value){
 int swprintr(result_t r, wstring_t str){
     switch(r.type){
         case type_boolean:
-            swprintf(str, L"%s", r.value.getBoolean ? L"true" : L"false");
-            break;
+            return swprintf(str, L"%s", r.value.getBoolean ? __key_words[key_true] : __key_words[key_false]);
         case type_character:
-            swprintf(str, L"%c", (character_t)r.value.getReal);
-            break;
+            return swprintf(str, L"%c", (character_t)r.value.getReal);
         case type_real:
-            swprintf(str, L"%g", r.value.getReal);
-            break;
+            return swprintf(str, L"%g", r.value.getReal);
         case type_string:
-            swprintf(str, L"%s", r.value.getString);
-            break;
+            return swprintf(str, L"%s", r.value.getString);
         default:
             swprintf(str, L"");
-            return 0;
     }
-    return 1;
+    return 0;
 }
 
 int executeCommand(pointer_t buf){
