@@ -562,7 +562,7 @@ static result_t evaluateBrackets(result_t stream, result_t element){
 }
 
 static result_t term(pointer_t buf){
-    result_t result;
+    result_t result = {};
     wstring_t check = NULL;
     switch(token -> type){
         case tok_reserved:
@@ -712,7 +712,7 @@ static result_t term(pointer_t buf){
             break;
         case tok_string:
             result.type = type_string;
-            result.value.getString = token->value;
+            result.value.getString = new_wstring(token->value);
             break;
         default:
             break;

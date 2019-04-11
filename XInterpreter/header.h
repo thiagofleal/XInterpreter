@@ -9,7 +9,7 @@
 #   define INLINE
 #endif // defined
 
-//#define __TEST__
+#define __TEST__
 
 #define True 0x1
 #define False 0x0
@@ -363,6 +363,7 @@ extern INLINE void expectedToken(type_token type, int intern, wstring_t value);
 extern INLINE uint_t countVariables(void);
 extern INLINE uint_t countGlobalVariables(void);
 extern INLINE uint_t internIdentifier(wstring_t);
+extern INLINE uint_t setCountVariables(uint_t);
 
 extern void initTokens(const wstring_t, const wstring_t);
 extern void declareVariable(pointer_t);

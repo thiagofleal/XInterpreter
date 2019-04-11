@@ -89,6 +89,13 @@ INLINE uint_t countVariables(void){
     return count_var;
 }
 
+INLINE uint_t setCountVariables(uint_t value){
+    if(value < count_var && value >= 0){
+        count_var = value;
+    }
+    return count_var;
+}
+
 static void freeVariable(variable_p variable){
     free_value(variable->type, variable->value);
     free(variable->value);
@@ -103,13 +110,12 @@ void destroyVariables(uint_t since){
 
 uint_t backupVariables(uint_t begin, variable_p bk){
     register int i;
-    register uint_t length = count_var - begin;
+    register const uint_t length = count_var - begin;
 
-    for(i = 0; i < length; i++){
-        bk[i] = var[begin + i];
+    for(i = length - 1; i >= 0; i--){
+        bk[i] = var[-- count_var];
     }
 
-    count_var = begin;
     return length;
 }
 
@@ -118,10 +124,8 @@ void restaureVariables(variable_p bk, uint_t length){
     check(bk);
 
     for(i = 0; i < length; i++){
-        var[count_var + i] = bk[i];
+        var[count_var ++] = bk[i];
     }
-
-    count_var += length;
 }
 
 void declareParameters(function_p pfunction){

@@ -85,11 +85,11 @@ uint_t getArguments(result_t dest[], pointer_t buf){
 }
 
 void executeFunction(function_p function, result_t args[], result_p ret, pointer_t buf){
-    uint_t count_vars = countVariables();
-    uint_t global = countGlobalVariables();
-    uint_t length = count_vars - global;
-    variable_p bk = malloc(length * sizeof(variable_t));
-    token_p bktoken = token;
+    const uint_t count_vars = countVariables();
+    const uint_t global = countGlobalVariables();
+    const uint_t length = count_vars - global;
+    const variable_p bk = malloc(length * sizeof(variable_t));
+    const token_p bktoken = token;
 
     check(bk);
 
@@ -98,7 +98,8 @@ void executeFunction(function_p function, result_t args[], result_p ret, pointer
     token = function->enter;
     executeBlock(buf);
     * ret = getReturn();
-    destroyVariables(count_vars);
+    destroyVariables(count_vars + function->count_params);
+    setCountVariables(global);
     restaureVariables(bk, length);
     free(bk);
     token = bktoken;

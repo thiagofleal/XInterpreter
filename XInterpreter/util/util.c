@@ -222,7 +222,8 @@ void assign_result(pointer_t src, result_t* dest, int type){
             dest->value.getReal = *(real_t*)src;
             break;
         case type_string:
-            dest->value.getString = *(wstring_t*)src;
+            if(dest->value.getString) { free(dest->value.getString); }
+            dest->value.getString = new_wstring(*(wstring_t*)src);
             break;
         case type_array:
             dest->value.getPointer = *(array_p*)src;
@@ -250,7 +251,8 @@ void assign_pointer(result_p src, pointer_t dest, int type){
             *(real_t*)dest = src->value.getReal;
             break;
         case type_string:
-            *(wstring_t*)dest = src->value.getString;
+            if(*(wstring_t*)dest){ free(*(wstring_t*)dest); }
+            *(wstring_t*)dest = new_wstring(src->value.getString);
             break;
         case type_array:
             if((array_p)dest){
