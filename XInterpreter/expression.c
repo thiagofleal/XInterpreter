@@ -579,6 +579,16 @@ static result_t term(pointer_t buf){
                     result.type = type_null;
                     result.value.getPointer = NULL;
                     break;
+                case key_new:
+                    switch((++ token) -> type){
+                        case tok_reserved:
+                            break;
+                        case tok_identifier:
+                            break;
+                        default:
+                            printError(syntax_error, *token, NULL);
+                    }
+                    break;
             }
             break;
         case tok_identifier:

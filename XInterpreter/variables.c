@@ -49,16 +49,17 @@ static void declare(variable_p var, type_value type, uint_t identifier, int coun
 }
 
 void declareVariable(pointer_t buf){
-    uint_t type = token->intern - tok_reserved;
+    uint_t type = token->intern - tok_reserved, dim;
 
     if(type >= type_boolean && type <= type_object){
         int count_dimensions = dimensions(), identifier;
         expectedToken(tok_punctuation, punctuation(L':'), L":");
-        ++ token;
-        identifier = token->intern;
 
         do{
-            declare(var + count_var, type, identifier, count_dimensions + dimensions());
+            dim = dimensions();
+            ++ token;
+            identifier = token->intern;
+            declare(var + count_var, type, identifier, count_dimensions + dim);
 
             ++ token;
             ++ count_var;

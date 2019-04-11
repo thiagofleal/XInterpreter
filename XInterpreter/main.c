@@ -39,21 +39,13 @@ static wstring_t wstr_error[] = {
 };
 
 INLINE void printError(type_error error, token_t from, wstring_t message){
-    static wstring_t before
-    #ifdef __TEST__
-        = L"Before"
-    #else
-        = L"";
-    #endif // __TEST__
-    ;
     fwprintf(
         stderr,
         message
-            ? L"\n -> %s: %i\n\t>> %s <%s>: %s: %s\n"
-            : L"\n -> %s: %i\n\t>> %s <%s>: %s\n",
+            ? L"\n -> %s: %i\n\t>> <%s>: %s: %s\n"
+            : L"\n -> %s: %i\n\t>> <%s>: %s\n",
         from.file,
         from.line,
-        before,
         from.value,
         wstr_error[error],
         message
