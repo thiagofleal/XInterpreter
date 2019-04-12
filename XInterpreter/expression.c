@@ -255,9 +255,8 @@ static result_t evaluateDoubleLeft(result_t left, result_t right){
         size2 *= sizeof(wchar_t);
 
         wstr1 = malloc(size1);
-        check(wstr1);
         wstr2 = malloc(size2);
-        check(wstr2);
+        check(wstr1 && wstr2);
 
         size1 = swprintr(left, wstr1) * sizeof(wchar_t);
         size2 = swprintr(right, wstr2) * sizeof(wchar_t);
@@ -540,19 +539,71 @@ static result_t evaluateRadix(result_t left, result_t right){
     return result;
 }
 
-static result_t evaluateBrackets(result_t stream, result_t element){
-    result_t ret = {};
-    if(stream.type == type_array && element.type == type_real){
-        array_p array = stream.value.getPointer;
-        int type = array->dimensions - 1 ? type_array : array->type;
+boolean_t assign_value(result_p result, pointer_t value, type_value type){
+    if((token + 1) -> type == tok_operator){
+        switch((++ token) -> intern){
+            case op_assignment:
+                ++ token;
+                *result = evaluateAssignment(value, type, expression(__buf));
+                return True;
+            case op_negative_assignment:
+                *result = evaluateNegativeAssignment(value, type, 1);
+                return True;
+            case op_increment:
+                *result = evaluateIncrement(value, type, 1);
+                return True;
+            case op_decrement:
+                *result = evaluateDecrement(value, type, 1);
+                return True;
+            case op_addition_assignment:
+                ++ token;
+                *result = evaluateAdditionAssignment(value, type, expression(__buf));
+                return True;
+            case op_subtraction_assignment:
+                ++ token;
+                *result = evaluateSubtractionAssignment(value, type, expression(__buf));
+                return True;
+            case op_multiply_assignment:
+                ++ token;
+                *result = evaluateMultiplyAssignment(value, type, expression(__buf));
+                return True;
+            case op_division_assignment:
+                ++ token;
+                *result = evaluateDivisionAssignment(value, type, expression(__buf));
+                return True;
+            case op_module_assignment:
+                ++ token;
+                *result = evaluateModuleAssignment(value, type, expression(__buf));
+                return True;
+            case op_pow_assignment:
+                ++ token;
+                *result = evaluatePowAssignment(value, type, expression(__buf));
+                return True;
+            case op_radix_assignment:
+                ++ token;
+                *result = evaluateRadixAssignment(value, type, expression(__buf));
+                return True;
+            default:
+                -- token;
+        }
+    }
+    return False;
+}
 
-        if((uint_t)element.value.getReal < array->length){
-            pointer_t value = array->value + array->size * (size_t)element.value.getReal;
-            assign_result(
-                value,
-                &ret,
-                type
-            );
+static result_t evaluateBrackets(result_t stream, result_t element){
+    static result_t ret;
+    if(stream.type == type_array && element.type == type_real){
+        heap_p heap = stream.value.getHeap;
+        array_p array = heap->memory;
+        type_value type = array->dimensions > 1 ? type_array : array->type;
+        uint_t index = (uint_t)element.value.getReal;
+
+        expectedToken(tok_operator, op_bracket_close, L"[");
+
+        if(index >= 0 && index < array->length){
+            pointer_t value = array->value + index * array->size;
+            assign_result(value, &ret, type);
+            assign_value(&ret, value, type);
         }
         else{
             printError(array_bounds_error, *token, NULL);
@@ -581,9 +632,24 @@ static result_t term(pointer_t buf){
                     break;
                 case key_new:
                     switch((++ token) -> type){
-                        case tok_reserved:
+                        case tok_reserved:{
+                            uint_t type = token->intern - tok_reserved;
+                            uint_t length[num_array_dimensions];
+                            register int i = 0;
+
+                            while((++ token)->intern == op_bracket_open){
+                                ++ token;
+                                length[i++] = (uint_t)expression(buf).value.getReal;
+                                expectedToken(tok_operator, op_bracket_close, L"]");
+                            }
+
+                            -- token;
+                            result.type = type_array;
+                            result.value.getHeap = new_array(type, i, length);
                             break;
+                        }
                         case tok_identifier:
+                            // Class
                             break;
                         default:
                             printError(syntax_error, *token, NULL);
@@ -604,58 +670,13 @@ static result_t term(pointer_t buf){
                 }
                 assign_result(variable->value, &result, variable->type);
 
-                if((token + 1) -> type == tok_operator){
-                    switch((++ token) -> intern){
-                        case op_assignment:
-                            ++ token;
-                            result = evaluateAssignment(variable->value, variable->type, expression(__buf));
-                            break;
-                        case op_negative_assignment:
-                            result = evaluateNegativeAssignment(variable->value, variable->type, 1);
-                            break;
-                        case op_increment:
-                            result = evaluateIncrement(variable->value, variable->type, 1);
-                            break;
-                        case op_decrement:
-                            result = evaluateDecrement(variable->value, variable->type, 1);
-                            break;
-                        case op_addition_assignment:
-                            ++ token;
-                            result = evaluateAdditionAssignment(variable->value, variable->type, expression(__buf));
-                            break;
-                        case op_subtraction_assignment:
-                            ++ token;
-                            result = evaluateSubtractionAssignment(variable->value, variable->type, expression(__buf));
-                            break;
-                        case op_multiply_assignment:
-                            ++ token;
-                            result = evaluateMultiplyAssignment(variable->value, variable->type, expression(__buf));
-                            break;
-                        case op_division_assignment:
-                            ++ token;
-                            result = evaluateDivisionAssignment(variable->value, variable->type, expression(__buf));
-                            break;
-                        case op_module_assignment:
-                            ++ token;
-                            result = evaluateModuleAssignment(variable->value, variable->type, expression(__buf));
-                            break;
-                        case op_pow_assignment:
-                            ++ token;
-                            result = evaluatePowAssignment(variable->value, variable->type, expression(__buf));
-                            break;
-                        case op_radix_assignment:
-                            ++ token;
-                            result = evaluateRadixAssignment(variable->value, variable->type, expression(__buf));
-                            break;
-                        case op_bracket_open:
-                            ++ token;
-                            result = evaluateBrackets(result, expression(__buf));
-                            expectedToken(tok_operator, op_bracket_close, L"]");
-                            break;
-                        default:
-                            -- token;
-                            break;
+                if(!assign_value(&result, variable->value, variable->type)){
+                    while((++ token)->intern == op_bracket_open){
+                        ++ token;
+                        result = evaluateBrackets(result, expression(__buf));
                     }
+
+                    -- token;
                 }
             }
             break;

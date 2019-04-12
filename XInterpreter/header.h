@@ -27,7 +27,7 @@ typedef wchar_t* wstring_t;
 typedef struct{
     uint_t count;
     void (* destroy)(pointer_t);
-    char memory[0];
+    pointer_t memory;
 }heap_t, *heap_p;
 
 enum number{
@@ -38,7 +38,8 @@ enum number{
     num_attributes = 100,
     num_methods = 200,
     num_constructors = 20,
-    num_operators = 100
+    num_operators = 100,
+    num_array_dimensions = 10
 };
 
 enum default_values{
@@ -266,6 +267,7 @@ typedef union{
     real_t getReal;
     wstring_t getString;
     pointer_t getPointer;
+    heap_p getHeap;
 }value_t, *value_p;
 
 typedef struct{
@@ -274,7 +276,7 @@ typedef struct{
 }result_t, *result_p;
 
 typedef struct{
-    heap_p value;
+    pointer_t value;
     type_value type;
     size_t size;
     int dimensions;
@@ -319,7 +321,7 @@ typedef struct str_class class_t, *class_p;
 
 struct str_class{
     uint_t identifier;
-    class_t *super;
+    class_p super;
     int count_constructors;
     method_t constructor[num_constructors];
     method_t destructor;
@@ -331,12 +333,13 @@ struct str_class{
     method_t operators[num_operators];
 };
 
-typedef struct{
-    heap_t super;
+typedef struct str_object object_t, *object_p;
+
+struct str_object{
+    object_p super;
     class_p pclass;
-    class_p base;
     attribute_p attributes;
-}object_t, *object_p;
+};
 
 typedef enum{
     expected_token,

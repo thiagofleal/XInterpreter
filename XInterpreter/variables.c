@@ -8,17 +8,6 @@ extern INLINE result_t evaluateAssignment(pointer_t, type_value, result_t);
 static uint_t count_var;
 variable_t var[num_variables];
 
-static const size_t size[] = {
-    [type_boolean] = sizeof(boolean_t),
-    [type_character] = sizeof(character_t),
-    [type_integer] = sizeof(integer_t),
-    [type_real] = sizeof(real_t),
-    [type_string] = sizeof(wstring_t),
-    [type_array] = sizeof(array_p),
-    [type_object] = sizeof(object_p),
-    [type_args] = sizeof(pointer_t)
-};
-
 static uint_t dimensions(void){
     register int count = 0;
     while((token + 1)->intern == op_bracket_open){
@@ -32,18 +21,27 @@ static uint_t dimensions(void){
 static void declare(variable_p var, type_value type, uint_t identifier, int count_dimensions){
     var->identifier = token->intern;
     if(count_dimensions){
+        heap_p heap = malloc(sizeof(heap_t));
         var->type = type_array;
-        var->value = calloc(sizeof(array_t), 1);
-        check(var->value);
-        ((array_p)var->value)->dimensions = count_dimensions;
-        ((array_p)var->value)->type = type;
-        ((array_p)var->value)->size = size[type];
-        ((array_p)var->value)->length = 0;
-        ((array_p)var->value)->value = NULL;
+        var->value = calloc(sizeof(heap_p), 1);
+        check(heap && var->value);
+
+        heap->count = 0;
+        heap->destroy = NULL;
+        heap->memory = malloc(sizeof(array_t));
+        check(heap->memory);
+
+        ((array_p)heap->memory)->dimensions = count_dimensions;
+        ((array_p)heap->memory)->type = type;
+        ((array_p)heap->memory)->size = size_type[type];
+        ((array_p)heap->memory)->length = 0;
+        ((array_p)heap->memory)->value = NULL;
+
+        *(heap_p*)var->value = heap;
     }
     else{
         var->type = type;
-        var->value = calloc(size[type], 1);
+        var->value = calloc(size_type[type], 1);
         check(var->value);
     }
 }
@@ -98,6 +96,17 @@ INLINE uint_t setCountVariables(uint_t value){
 }
 
 static void freeVariable(variable_p variable){
+    switch(variable->type){
+        case type_string:
+            free(*(wstring_t*)variable->value);
+            break;
+        case type_array:
+        case type_object:
+            assign_heap_null((heap_p*)variable->value);
+            break;
+        default:
+            break;
+    }
     free_value(variable->type, variable->value);
     free(variable->value);
 }

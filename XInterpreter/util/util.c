@@ -5,6 +5,17 @@
 #include <assert.h>
 #include "util.h"
 
+const size_t size_type[] = {
+    [type_boolean] = sizeof(boolean_t),
+    [type_character] = sizeof(character_t),
+    [type_integer] = sizeof(integer_t),
+    [type_real] = sizeof(real_t),
+    [type_string] = sizeof(wstring_t),
+    [type_array] = sizeof(heap_p),
+    [type_object] = sizeof(heap_p),
+    [type_args] = sizeof(pointer_t)
+};
+
 list new_list(void){
     list ret = malloc(sizeof(list_t));
     assert(ret);
@@ -94,8 +105,11 @@ int list_search(list l, pointer_t value, size_t size){
     return -1;
 }
 
-void __check_fail__(string_t error){
-    fprintf(stderr, "%s\n", error);
+void __check_fail__(string_t error, string_t file, int line){
+    fprintf(stderr, "%s [%s => %i]\n", error, file, line);
+    if(errno){
+        fprintf(stderr, "errno: [%s]\n", strerror(errno));
+    }
     exit(EXIT_FAILURE);
 }
 
@@ -145,32 +159,34 @@ int wstring_near(wstring_t str1, wstring_t str2){
     return 1;
 }
 
-heap_p new_heap(size_t memory, void (* destroy)(pointer_t)){
-    heap_p heap = calloc(sizeof(heap_t) + memory, 1);
+void alloc_heap(heap_p heap, void (*function)(pointer_t), pointer_t value){
     heap->count = 0;
-    heap->destroy = destroy;
-    return heap;
+    heap->destroy = function;
+    heap->memory = value;
 }
 
-void assign_heap(heap_p *dest, heap_p *src){
+void assign_heap(heap_p *dest, heap_p src){
     if(* dest){
         if(! -- (* dest)->count){
-            if((*dest)->destroy){
-                (*dest)->destroy(* dest);
-            }
-            else{
-                free(* dest);
+            if((* dest)->destroy){
+                (* dest)->destroy((* dest)->memory);
             }
         }
     }
-    ++ (* src)->count;
-    * dest = * src;
+
+    ++ src->count;
+    * dest = src;
 }
 
-void assign_heap_null(heap_p *dest){
-    if(! -- (* dest)->count){
-        free(* dest);
+void assign_heap_null(heap_p* dest){
+    if(*dest){
+        if(! -- (* dest)->count){
+            if((* dest)->destroy){
+                (* dest)->destroy((* dest)->memory);
+            }
+        }
     }
+
     * dest = NULL;
 }
 
@@ -180,8 +196,8 @@ void free_value(type_value type, pointer_t value){
             free(*(wstring_t*)value);
             break;
         case type_array:
-            break;
         case type_object:
+            assign_heap_null((heap_p*)value);
             break;
         case type_args:
             break;
@@ -206,7 +222,7 @@ void free_result(result_t result){
     }
 }
 
-void assign_result(pointer_t src, result_t* dest, int type){
+void assign_result(pointer_t src, result_t* dest, type_value type){
     switch(dest->type = type){
         case type_boolean:
             dest->value.getBoolean = *(boolean_t*)src;
@@ -226,17 +242,17 @@ void assign_result(pointer_t src, result_t* dest, int type){
             dest->value.getString = new_wstring(*(wstring_t*)src);
             break;
         case type_array:
-            dest->value.getPointer = *(array_p*)src;
-            break;
         case type_object:
-            dest->value.getPointer = *(object_p*)src;
+            dest->value.getHeap = *(heap_p*)src;
+            break;
+        case type_null:
             break;
         default:
             break;
     }
 }
 
-void assign_pointer(result_p src, pointer_t dest, int type){
+void assign_pointer(result_p src, pointer_t dest, type_value type){
     switch(type){
         case type_boolean:
             *(boolean_t*)dest = src->value.getBoolean;
@@ -255,22 +271,115 @@ void assign_pointer(result_p src, pointer_t dest, int type){
             *(wstring_t*)dest = new_wstring(src->value.getString);
             break;
         case type_array:
-            if((array_p)dest){
-                if(((array_p)dest)->dimensions == ((array_p)src->value.getPointer)->dimensions){
-                    assign_heap(&((array_p)dest)->value, &((array_p)src->value.getPointer)->value);
-                    ((array_p)dest)->length = ((array_p)src->value.getPointer)->length;
-                }
-                else{
-                    printError(array_assignment_error, *token, NULL);
-                }
+            if(src->type == type_null){
+                assign_heap(
+                    (heap_p*)dest,
+                    new_array_null(
+                       ((array_p)(*(heap_p*)dest)->memory)->type,
+                       ((array_p)(*(heap_p*)dest)->memory)->dimensions
+                    )
+                );
             }
             else{
-                assign_heap_null(&((array_p)dest)->value);
-                ((array_p)dest)->length = 0;
+                if(
+                   ((array_p)(*(heap_p*)dest)->memory)->type ==
+                   ((array_p)src->value.getHeap->memory)->type
+                ){
+                    if(
+                       ((array_p)(*(heap_p*)dest)->memory)->dimensions ==
+                       ((array_p)src->value.getHeap->memory)->dimensions
+                    ){
+                        assign_heap((heap_p*)dest, src->value.getHeap);
+                    }
+                    else{
+                        printError(array_assignment_error, *token, L"Different dimensions");
+                    }
+                }else{
+                    printError(array_assignment_error, *token, L"Different types");
+                }
             }
             break;
         case type_object:
-            *(object_p*)dest = (object_t*)src->value.getPointer;
+            if(src->type == type_null){
+                assign_heap_null((heap_p*)dest);
+            }
+            else{
+                assign_heap((heap_p*)dest, src->value.getHeap);
+            }
+            break;
+        case type_null:
+            wprintf(L"Null: %i\n", token->line);
+            break;
+        default:
             break;
     }
+}
+
+void destroyArray(pointer_t _array){
+    array_p array = _array;
+
+    if(array->dimensions > 1){
+        register uint_t i;
+
+        for(i = 0; i < array->length; i++){
+            destroyArray(
+                (*(heap_p*)
+                    (array->value + i * array->size)
+                )->memory
+            );
+        }
+    }
+    free(array->value);
+}
+
+static heap_p new_array_node(type_value type, size_t size, uint_t length, int dimensions){
+    heap_p heap = malloc(sizeof(heap_t));
+    array_p array = malloc(sizeof(array_t));
+    pointer_t memory = calloc(size, length);
+    check(heap && array && memory);
+
+    array->dimensions = dimensions;
+    array->length = length;
+    array->size = size;
+    array->type = type;
+    array->value = memory;
+
+    alloc_heap(heap, destroyArray, array);
+    return heap;
+}
+
+heap_p new_array(type_value type, uint_t dimensions, uint_t length[]){
+    if(dimensions > 1){
+        register int i;
+        heap_p heap = new_array_node(type, sizeof(array_t), *length, dimensions);
+
+        for(i = 0; i < *length; i++){
+            *(pointer_t*)
+                (((array_p)heap->memory)->value + i * sizeof(array_t))
+                    = new_array(type, dimensions - 1, length + 1);
+        }
+
+        return heap;
+    }
+    else{
+        return new_array_node(type, size_type[type], *length, 1);
+    }
+}
+
+heap_p new_array_null(type_value type, uint_t dimensions){
+    heap_p heap = malloc(sizeof(heap_t));
+    array_p array = malloc(sizeof(array_t));
+    check(heap && array);
+
+    array->dimensions = dimensions;
+    array->length = 0;
+    array->size = size_type[type];
+    array->type = type;
+    array->value = NULL;
+
+    heap->count = 0;
+    heap->destroy = NULL;
+    heap->memory = array;
+
+    return heap;
 }
