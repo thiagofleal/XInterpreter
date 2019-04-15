@@ -41,7 +41,7 @@ static void declare(variable_p var, type_value type, uint_t identifier, int coun
     }
     else{
         var->type = type;
-        var->value = calloc(size_type[type], 1);
+        var->value = calloc(1, size_type[type]);
         check(var->value);
     }
 }
@@ -95,10 +95,12 @@ INLINE uint_t setCountVariables(uint_t value){
     return count_var;
 }
 
-static void freeVariable(variable_p variable){
+void freeVariableMemory(variable_p variable){
     switch(variable->type){
         case type_string:
-            free(*(wstring_t*)variable->value);
+            if(*(wstring_t*)variable->value){
+                free(*(wstring_t*)variable->value);
+            }
             break;
         case type_array:
         case type_object:
@@ -107,6 +109,10 @@ static void freeVariable(variable_p variable){
         default:
             break;
     }
+}
+
+static void freeVariable(variable_p variable){
+    freeVariableMemory(variable);
     free_value(variable->type, variable->value);
     free(variable->value);
 }

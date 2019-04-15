@@ -341,7 +341,19 @@ static result_t evaluateOnlyIf(result_t left, result_t right){
 static result_t evaluateEqual(result_t left, result_t right){
     result_t ret = {.type = type_boolean, .value.getBoolean = False};
     if(left.type != right.type){
-        ret.value.getBoolean = False;
+        if(left.type == type_array && right.type == type_null){
+            ret.value.getBoolean = ((array_p)left.value.getHeap->memory)->value ? False : True;
+        }
+        else if(left.type == type_object && right.type == type_null){
+            ret.value.getBoolean = left.value.getHeap->memory ? False : True;
+        }
+        else if(left.type == type_null && right.type == type_array){
+            ret.value.getBoolean = ((array_p)right.value.getHeap->memory)->value ? False : True;
+        }
+        else if(left.type == type_null && right.type == type_object){
+            ret.value.getBoolean = right.value.getHeap->memory ? False : True;
+        }
+        else ret.value.getBoolean = False;
     }
     else{
         switch(left.type){
@@ -356,10 +368,10 @@ static result_t evaluateEqual(result_t left, result_t right){
                 ret.value.getBoolean = wcscmp(left.value.getString, right.value.getString) ? False : True;
                 break;
             case type_array:
-                ret.value.getBoolean = left.value.getPointer == right.value.getPointer ? True : False;
+                ret.value.getBoolean = left.value.getHeap == right.value.getHeap ? True : False;
                 break;
             case type_object:
-                ret.value.getBoolean = left.value.getPointer == right.value.getPointer ? True : False;
+                ret.value.getBoolean = left.value.getHeap == right.value.getHeap ? True : False;
                 break;
             default:
                 break;
@@ -371,7 +383,19 @@ static result_t evaluateEqual(result_t left, result_t right){
 static result_t evaluateDifferent(result_t left, result_t right){
     result_t ret = {.type = type_boolean, .value.getBoolean = False};
     if(left.type != right.type){
-        ret.value.getBoolean = True;
+        if(left.type == type_array && right.type == type_null){
+            ret.value.getBoolean = ((array_p)left.value.getHeap->memory)->value ? True : False;
+        }
+        else if(left.type == type_object && right.type == type_null){
+            ret.value.getBoolean = left.value.getHeap->memory ? True : False;
+        }
+        else if(left.type == type_null && right.type == type_array){
+            ret.value.getBoolean = ((array_p)right.value.getHeap->memory)->value ? True : False;
+        }
+        else if(left.type == type_null && right.type == type_object){
+            ret.value.getBoolean = right.value.getHeap->memory ? True : False;
+        }
+        else ret.value.getBoolean = True;
     }
     else{
         switch(left.type){
@@ -386,10 +410,10 @@ static result_t evaluateDifferent(result_t left, result_t right){
                 ret.value.getBoolean = wcscmp(left.value.getString, right.value.getString) ? True : False;
                 break;
             case type_array:
-                ret.value.getBoolean = left.value.getPointer != right.value.getPointer ? True : False;
+                ret.value.getBoolean = left.value.getHeap != right.value.getHeap ? True : False;
                 break;
             case type_object:
-                ret.value.getBoolean = left.value.getPointer != right.value.getPointer ? True : False;
+                ret.value.getBoolean = left.value.getHeap != right.value.getHeap ? True : False;
                 break;
             default:
                 break;
@@ -539,6 +563,26 @@ static result_t evaluateRadix(result_t left, result_t right){
     return result;
 }
 
+static void brackets(result_p result, result_t element, pointer_t value, type_value type){
+    if(result->type == type_array && element.type == type_real){
+        heap_p heap = result->value.getHeap;
+        array_p array = heap->memory;
+        type_value type = array->dimensions > 1 ? type_array : array->type;
+        uint_t index = (uint_t)element.value.getReal;
+
+        expectedToken(tok_operator, op_bracket_close, L"]");
+
+        if(index >= 0 && index < array->length){
+            pointer_t value = array->value + index * array->size;
+            assign_result(value, result, type);
+            assign_value(result, value, type);
+        }
+        else{
+            printError(array_bounds_error, *token, NULL);
+        }
+    }
+}
+
 boolean_t assign_value(result_p result, pointer_t value, type_value type){
     if((token + 1) -> type == tok_operator){
         switch((++ token) -> intern){
@@ -583,33 +627,15 @@ boolean_t assign_value(result_p result, pointer_t value, type_value type){
                 ++ token;
                 *result = evaluateRadixAssignment(value, type, expression(__buf));
                 return True;
+            case op_bracket_open:
+                ++ token;
+                brackets(result, expression(__buf), value, type);
+                return True;
             default:
                 -- token;
         }
     }
     return False;
-}
-
-static result_t evaluateBrackets(result_t stream, result_t element){
-    static result_t ret;
-    if(stream.type == type_array && element.type == type_real){
-        heap_p heap = stream.value.getHeap;
-        array_p array = heap->memory;
-        type_value type = array->dimensions > 1 ? type_array : array->type;
-        uint_t index = (uint_t)element.value.getReal;
-
-        expectedToken(tok_operator, op_bracket_close, L"[");
-
-        if(index >= 0 && index < array->length){
-            pointer_t value = array->value + index * array->size;
-            assign_result(value, &ret, type);
-            assign_value(&ret, value, type);
-        }
-        else{
-            printError(array_bounds_error, *token, NULL);
-        }
-    }
-    return ret;
 }
 
 static result_t term(pointer_t buf){
@@ -669,15 +695,7 @@ static result_t term(pointer_t buf){
                     exit(EXIT_FAILURE);
                 }
                 assign_result(variable->value, &result, variable->type);
-
-                if(!assign_value(&result, variable->value, variable->type)){
-                    while((++ token)->intern == op_bracket_open){
-                        ++ token;
-                        result = evaluateBrackets(result, expression(__buf));
-                    }
-
-                    -- token;
-                }
+                assign_value(&result, variable->value, variable->type);
             }
             break;
         case tok_punctuation:

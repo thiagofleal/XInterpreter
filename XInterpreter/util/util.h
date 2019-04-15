@@ -5,6 +5,8 @@
 
 typedef struct node node_t;
 
+typedef void (* freeHeap)(pointer_t);
+
 struct node{
     pointer_t value;
     node_t *next;
@@ -24,7 +26,6 @@ pointer_t list_access(list, int);
 pointer_t list_remove(list, int);
 int list_search(list, pointer_t, size_t);
 
-
 extern void __check_fail__(string_t, string_t, int);
 
 #define check(t) ((t) ? (void)0 : __check_fail__("\rcheck fail: \"" # t "\"", __FILE__, __LINE__))
@@ -35,7 +36,8 @@ INLINE wstring_t new_wstring(wchar_t[]);
 int string_near(string_t, string_t);
 int wstring_near(wstring_t, wstring_t);
 
-void alloc_heap(heap_p, void (*)(pointer_t), pointer_t);
+void manageHeap(heap_p*);
+void alloc_heap(heap_p, freeHeap, pointer_t);
 void assign_heap(heap_p*, heap_p);
 void assign_heap_null(heap_p*);
 

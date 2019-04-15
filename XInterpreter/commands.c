@@ -32,6 +32,9 @@ int swprintr(result_t r, wstring_t str){
             return swprintf(str, L"%g", r.value.getReal);
         case type_string:
             return swprintf(str, L"%s", r.value.getString);
+        case type_array:
+        case type_object:
+            return swprintf(str, L"%p", r.value.getHeap->memory);
         default:
             swprintf(str, L"");
     }

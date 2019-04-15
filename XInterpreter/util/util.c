@@ -114,10 +114,12 @@ void __check_fail__(string_t error, string_t file, int line){
 }
 
 INLINE string_t new_string(char str[]){
+    if(!str) return NULL;
     return strcpy(malloc((strlen(str) + 1) * sizeof(char)), str);
 }
 
 INLINE wstring_t new_wstring(wchar_t wstr[]){
+    if(!wstr) return NULL;
     return wcscpy(malloc((wcslen(wstr) + 1) * sizeof(wchar_t)), wstr);
 }
 
@@ -159,34 +161,32 @@ int wstring_near(wstring_t str1, wstring_t str2){
     return 1;
 }
 
-void alloc_heap(heap_p heap, void (*function)(pointer_t), pointer_t value){
+void alloc_heap(heap_p heap, freeHeap function, pointer_t value){
     heap->count = 0;
     heap->destroy = function;
     heap->memory = value;
 }
 
-void assign_heap(heap_p *dest, heap_p src){
-    if(* dest){
-        if(! -- (* dest)->count){
-            if((* dest)->destroy){
-                (* dest)->destroy((* dest)->memory);
+void manageHeap(heap_p *heap){
+    if(heap){
+        if(* heap){
+            if(! -- (* heap)->count){
+                if((* heap)->destroy){
+                    (* heap)->destroy((* heap)->memory);
+                }
             }
         }
     }
+}
 
+void assign_heap(heap_p *dest, heap_p src){
+    manageHeap(dest);
     ++ src->count;
     * dest = src;
 }
 
 void assign_heap_null(heap_p* dest){
-    if(*dest){
-        if(! -- (* dest)->count){
-            if((* dest)->destroy){
-                (* dest)->destroy((* dest)->memory);
-            }
-        }
-    }
-
+    manageHeap(dest);
     * dest = NULL;
 }
 
@@ -223,6 +223,11 @@ void free_result(result_t result){
 }
 
 void assign_result(pointer_t src, result_t* dest, type_value type){
+    if(dest->type == type_string){
+        if(dest->value.getString){
+            free(dest->value.getString);
+        }
+    }
     switch(dest->type = type){
         case type_boolean:
             dest->value.getBoolean = *(boolean_t*)src;
@@ -238,7 +243,6 @@ void assign_result(pointer_t src, result_t* dest, type_value type){
             dest->value.getReal = *(real_t*)src;
             break;
         case type_string:
-            if(dest->value.getString) { free(dest->value.getString); }
             dest->value.getString = new_wstring(*(wstring_t*)src);
             break;
         case type_array:
@@ -308,7 +312,6 @@ void assign_pointer(result_p src, pointer_t dest, type_value type){
             }
             break;
         case type_null:
-            wprintf(L"Null: %i\n", token->line);
             break;
         default:
             break;

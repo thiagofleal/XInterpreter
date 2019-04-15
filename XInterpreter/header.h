@@ -377,7 +377,8 @@ extern void preScan(pointer_t);
 extern void executeFunction(function_p, result_t[], result_p, pointer_t);
 extern void callFunction(token_p, result_p, pointer_t);
 
-int swprintr(result_t, wstring_t);
+extern boolean_t assign_value(result_p, pointer_t, type_value);
+extern int swprintr(result_t, wstring_t);
 
 extern result_t expression(pointer_t);
 extern variable_p findVariable(uint_t);
