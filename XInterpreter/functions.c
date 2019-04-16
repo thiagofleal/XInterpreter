@@ -9,6 +9,7 @@ extern void allocateParameters(function_p, result_t[]);
 extern uint_t backupVariables(uint_t, variable_p);
 extern void restaureVariables(variable_p, uint_t);
 extern INLINE void setExec(boolean_t);
+extern void freeVariableMemory(variable_p);
 
 static uint_t count_functions;
 function_t functions[num_functions];
@@ -84,6 +85,13 @@ uint_t getArguments(result_t dest[], pointer_t buf){
     return count;
 }
 
+void freeParameters(function_p function){
+    register int i;
+    for(i = 0; i < function->count_params; i++){
+        freeVariableMemory(function->param + i);
+    }
+}
+
 void executeFunction(function_p function, result_t args[], result_p ret, pointer_t buf){
     const uint_t count_vars = countVariables();
     const uint_t global = countGlobalVariables();
@@ -100,6 +108,7 @@ void executeFunction(function_p function, result_t args[], result_p ret, pointer
     * ret = getReturn();
     destroyVariables(count_vars + function->count_params);
     setCountVariables(global);
+    freeParameters(function);
     restaureVariables(bk, length);
     free(bk);
     token = bktoken;

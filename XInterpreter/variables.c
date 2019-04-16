@@ -103,6 +103,14 @@ void freeVariableMemory(variable_p variable){
             }
             break;
         case type_array:
+            assign_heap(
+                (heap_p*)variable->value,
+                new_array_null(
+                   ((array_p)(*(heap_p*)variable->value)->memory)->type,
+                   ((array_p)(*(heap_p*)variable->value)->memory)->dimensions
+                )
+            );
+            break;
         case type_object:
             assign_heap_null((heap_p*)variable->value);
             break;

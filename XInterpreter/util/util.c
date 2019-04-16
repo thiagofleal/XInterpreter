@@ -376,7 +376,7 @@ heap_p new_array_null(type_value type, uint_t dimensions){
 
     array->dimensions = dimensions;
     array->length = 0;
-    array->size = size_type[type];
+    array->size = dimensions > 1 ? sizeof(array_t) : size_type[type];
     array->type = type;
     array->value = NULL;
 
