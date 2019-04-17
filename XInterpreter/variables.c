@@ -167,6 +167,11 @@ void declareParameters(function_p pfunction){
 
             declare(pfunction->param + count_parameters, type, identifier, d);
 
+            if(type == type_args){
+                -- pfunction->count_params;
+                pfunction->count_params += default_arguments;
+            }
+
             ++ token;
             ++ count_parameters;
         }
@@ -176,12 +181,20 @@ void declareParameters(function_p pfunction){
     -- token;
 }
 
-void allocateParameters(function_p func, result_t arguments[]){
+void allocateParameters(function_p func, result_t arguments[], uint_t count_args){
     register int i;
 
     for(i = 0; i < func->count_params; i++){
         var[count_var] = func->param[i];
-        assign_pointer(arguments + i, var[count_var].value, var[count_var].type);
+
+        if(func->param[i].type == type_args){
+            ((argument_p)var[count_var].value)->count = count_args - i;
+            ((argument_p)var[count_var].value)->values = arguments + i;
+        }
+        else{
+            assign_pointer(arguments + i, var[count_var].value, var[count_var].type);
+        }
+
         ++ count_var;
     }
 }

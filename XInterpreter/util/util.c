@@ -13,7 +13,7 @@ const size_t size_type[] = {
     [type_string] = sizeof(wstring_t),
     [type_array] = sizeof(heap_p),
     [type_object] = sizeof(heap_p),
-    [type_args] = sizeof(pointer_t)
+    [type_args] = sizeof(argument_t)
 };
 
 list new_list(void){

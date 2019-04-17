@@ -159,12 +159,10 @@ static void executeIf(pointer_t buf){
         if(cond.value.getBoolean){
             executeBlock(buf);
 
-            if((++ token)->intern == key_else){
+            if(token->intern == key_else){
                 ++ token;
                 findEndOfBlock();
-            }
-            else{
-                -- token;
+                ++ token;
             }
         }
         else{

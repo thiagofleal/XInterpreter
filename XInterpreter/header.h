@@ -9,7 +9,7 @@
 #   define INLINE
 #endif // defined
 
-//#define __TEST__
+#define __TEST__
 
 #define True 0x1
 #define False 0x0
@@ -284,6 +284,11 @@ typedef struct{
 }array_t, *array_p;
 
 typedef struct{
+    result_p values;
+    uint_t count;
+}argument_t, *argument_p;
+
+typedef struct{
     uint_t identifier;
     type_value type;
     pointer_t value;
@@ -374,7 +379,7 @@ extern void destroyVariables(uint_t);
 extern void declareFunction(void);
 extern void executeBlock(pointer_t);
 extern void preScan(pointer_t);
-extern void executeFunction(function_p, result_t[], result_p, pointer_t);
+extern void executeFunction(function_p, result_t[], uint_t, result_p, pointer_t);
 extern void callFunction(token_p, result_p, pointer_t);
 
 extern boolean_t assign_value(result_p, pointer_t, type_value);

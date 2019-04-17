@@ -5,7 +5,7 @@
 extern void findEndOfBlock(void);
 extern result_t getReturn(void);
 extern void declareParameters(function_p);
-extern void allocateParameters(function_p, result_t[]);
+extern void allocateParameters(function_p, result_t[], uint_t);
 extern uint_t backupVariables(uint_t, variable_p);
 extern void restaureVariables(variable_p, uint_t);
 extern INLINE void setExec(boolean_t);
@@ -59,7 +59,7 @@ function_p findFunction(uint_t identifier, int count_arguments){
             if(functions[i].count_params == count_arguments){
                 return functions + i;
             }
-            else if(functions[i].count_params >= default_arguments + count_arguments){
+            else if(functions[i].count_params >= default_arguments){
                 return functions + i;
             }
         }
@@ -92,7 +92,7 @@ void freeParameters(function_p function){
     }
 }
 
-void executeFunction(function_p function, result_t args[], result_p ret, pointer_t buf){
+void executeFunction(function_p function, result_t args[], uint_t count_args, result_p ret, pointer_t buf){
     const uint_t count_vars = countVariables();
     const uint_t global = countGlobalVariables();
     const uint_t length = count_vars - global;
@@ -102,7 +102,7 @@ void executeFunction(function_p function, result_t args[], result_p ret, pointer
     check(bk);
 
     backupVariables(global, bk);
-    allocateParameters(function, args);
+    allocateParameters(function, args, count_args);
     token = function->enter;
     executeBlock(buf);
     * ret = getReturn();
@@ -126,7 +126,7 @@ void callFunction(token_p identifier, result_p ret, pointer_t buf){
     expectedToken(tok_punctuation, punctuation(L')'), L")");
 
     if(function){
-        executeFunction(function, args, ret, buf);
+        executeFunction(function, args, count_args, ret, buf);
     }
     else{
         wchar_t str[50];

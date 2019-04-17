@@ -115,7 +115,7 @@ int main(int argc, string_t argv[]){
         }
         else{
             result_t args[num_args];
-            executeFunction(mainFunc, args, &res, buf);
+            executeFunction(mainFunc, args, 0, &res, buf);
         }
     #endif // __TEST__
 
