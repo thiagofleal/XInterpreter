@@ -114,6 +114,25 @@ void freeVariableMemory(variable_p variable){
         case type_object:
             assign_heap_null((heap_p*)variable->value);
             break;
+        case type_args:{
+            register uint_t i;
+
+            for(i = 0; i < ((argument_p)variable->value)->count; i++){
+                switch(((argument_p)variable->value)->values[i].type){
+                    case type_string:
+                        free(((argument_p)variable->value)->values[i].value.getString);
+                        break;
+                    case type_object:
+                    case type_array:
+                        manageHeap(((argument_p)variable->value)->values[i].value.getHeap);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            break;
+        }
         default:
             break;
     }
@@ -153,27 +172,33 @@ void restaureVariables(variable_p bk, uint_t length){
 }
 
 void declareParameters(function_p pfunction){
-    register int count_parameters = 0;
+    register int count_parameters = 0, identifier;
     uint_t type;
 
     do{
         ++ token;
         type = token->intern - tok_reserved;
+
         if(type >= type_boolean && type <= type_object){
-            int d = dimensions(), identifier;
+            int d = dimensions();
             expectedToken(tok_punctuation, punctuation(L':'), L":");
             ++ token;
             identifier = token->intern;
 
             declare(pfunction->param + count_parameters, type, identifier, d);
 
-            if(type == type_args){
-                -- pfunction->count_params;
-                pfunction->count_params += default_arguments;
-            }
-
             ++ token;
             ++ count_parameters;
+        }
+        else if(type == type_args){
+            expectedToken(tok_punctuation, punctuation(L':'), L":");
+            ++ token;
+            identifier = token->intern;
+
+            declare(pfunction->param + count_parameters, type_args, identifier, 0);
+
+            ++ token;
+            count_parameters += (uint_t)default_arguments;
         }
     }while(token->intern == punctuation(L','));
 
@@ -182,14 +207,15 @@ void declareParameters(function_p pfunction){
 }
 
 void allocateParameters(function_p func, result_t arguments[], uint_t count_args){
-    register int i;
+    register uint_t i;
 
     for(i = 0; i < func->count_params; i++){
         var[count_var] = func->param[i];
 
         if(func->param[i].type == type_args){
-            ((argument_p)var[count_var].value)->count = count_args - i;
-            ((argument_p)var[count_var].value)->values = arguments + i;
+            ((argument_p)func->param[i].value)->count = count_args - i;
+            ((argument_p)func->param[i].value)->values = arguments + i;
+            i += default_arguments;
         }
         else{
             assign_pointer(arguments + i, var[count_var].value, var[count_var].type);

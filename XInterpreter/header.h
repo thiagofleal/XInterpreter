@@ -124,9 +124,9 @@ typedef enum{
     type_integer,
     type_real,
     type_string,
-    type_array,
     type_object,
     type_args,
+    type_array,
     type_null,
     num_types
 }type_value;
@@ -387,6 +387,6 @@ extern int swprintr(result_t, wstring_t);
 
 extern result_t expression(pointer_t);
 extern variable_p findVariable(uint_t);
-extern function_p findFunction(uint_t, int);
+extern function_p findFunction(uint_t, uint_t);
 
 #endif // __INTERPRETER_HEADER_H__

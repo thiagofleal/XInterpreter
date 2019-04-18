@@ -26,32 +26,7 @@ void declareFunction(void){
     findEndOfBlock();
 }
 
-boolean_t compatible_types(variable_p param, result_p arg){
-    switch(param->type){
-        case type_boolean:
-            return arg->type == type_boolean ? True : False;
-        case type_character:
-        case type_integer:
-        case type_real:
-            return arg->type == type_character || arg->type == type_real ? True : False;
-        case type_string:
-            return arg->type == type_string ? True : False;
-        case type_array:
-            if(arg->type == type_array){
-                return
-                    ((array_p)param->value)->type == ((array_p)arg->value.getPointer)->type &&
-                    ((array_p)param->value)->dimensions == ((array_p)arg->value.getPointer)->dimensions
-                        ? True : False;
-            }
-            return arg->type == type_null ? True : False;
-        case type_object:
-            return arg->type == type_object || arg->type == type_null ? True : False;
-        default:
-            return False;
-    }
-}
-
-function_p findFunction(uint_t identifier, int count_arguments){
+function_p findFunction(uint_t identifier, uint_t count_arguments){
     register int i;
 
     for(i = count_functions - 1; i >= 0; i--){
@@ -60,7 +35,9 @@ function_p findFunction(uint_t identifier, int count_arguments){
                 return functions + i;
             }
             else if(functions[i].count_params >= default_arguments){
-                return functions + i;
+                if(count_arguments >= functions[i].count_params - default_arguments){
+                    return functions + i;
+                }
             }
         }
     }

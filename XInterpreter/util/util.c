@@ -11,9 +11,9 @@ const size_t size_type[] = {
     [type_integer] = sizeof(integer_t),
     [type_real] = sizeof(real_t),
     [type_string] = sizeof(wstring_t),
-    [type_array] = sizeof(heap_p),
     [type_object] = sizeof(heap_p),
-    [type_args] = sizeof(argument_t)
+    [type_args] = sizeof(argument_t),
+    [type_array] = sizeof(heap_p)
 };
 
 list new_list(void){
@@ -167,26 +167,27 @@ void alloc_heap(heap_p heap, freeHeap function, pointer_t value){
     heap->memory = value;
 }
 
-void manageHeap(heap_p *heap){
+void manageHeap(heap_p heap){
     if(heap){
-        if(* heap){
-            if(! -- (* heap)->count){
-                if((* heap)->destroy){
-                    (* heap)->destroy((* heap)->memory);
-                }
+        if(! heap->count){
+            if(heap->destroy){
+                heap->destroy(heap->memory);
+                heap->memory = NULL;
             }
         }
     }
 }
 
 void assign_heap(heap_p *dest, heap_p src){
-    manageHeap(dest);
+    -- (* dest)->count;
+    manageHeap(*dest);
     ++ src->count;
     * dest = src;
 }
 
 void assign_heap_null(heap_p* dest){
-    manageHeap(dest);
+    -- (* dest)->count;
+    manageHeap(*dest);
     * dest = NULL;
 }
 

@@ -110,12 +110,12 @@ int main(int argc, string_t argv[]){
         mainId = internIdentifier(L"Main");
         mainFunc = findFunction(mainId, 0);
 
-        if(!mainFunc){
-            printError(undeclared_function, *token, L"Main(<0>)");
-        }
-        else{
+        if(mainFunc){
             result_t args[num_args];
             executeFunction(mainFunc, args, 0, &res, buf);
+        }
+        else{
+            printError(undeclared_function, *token, L"Main(<0>)");
         }
     #endif // __TEST__
 
