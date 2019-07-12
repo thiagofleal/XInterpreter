@@ -136,7 +136,7 @@ void executeBlock(pointer_t buf){
     }
 }
 
-void findEndOfBlock(void){
+boolean_t findEndOfBlock(void){
     if(token->intern == punctuation(L'{')){
         register int count = 1;
         do{
@@ -147,9 +147,13 @@ void findEndOfBlock(void){
             if(token->intern == punctuation('}')){
                 -- count;
             }
+            if(token->intern == tok_end){
+                return False;
+            }
         }
         while(count);
     }
+    return True;
 }
 
 static void executeIf(pointer_t buf){
@@ -288,6 +292,7 @@ static void executeReturn(pointer_t buf){
     exec = False;
     if((token + 1)->intern == punctuation(L':')){
         ++ token; ++ token;
+        free_result(current_return);
         current_return = expression(buf);
     }
     expectedToken(tok_punctuation, punctuation(L';'), L";");

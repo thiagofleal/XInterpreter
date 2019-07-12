@@ -580,6 +580,8 @@ static void brackets(result_p result, result_t element, pointer_t value, type_va
         else{
             printError(array_bounds_error, *token, NULL);
         }
+
+        manageHeap(heap);
     }
 }
 
@@ -786,8 +788,6 @@ result_t expression(pointer_t buf){
     if(!setjmp(buf)){
         swprintf(str, L"<%s> ", token->value);
         evaluateMultiPurpose(&result);
-        swprintr(result, str + wcslen(str));
-        //wprintf(L" {%s}\n", str);
     }
     __buf = backup;
     return result;

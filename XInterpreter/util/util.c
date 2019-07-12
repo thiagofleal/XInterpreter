@@ -179,15 +179,24 @@ void manageHeap(heap_p heap){
 }
 
 void assign_heap(heap_p *dest, heap_p src){
-    -- (* dest)->count;
-    manageHeap(*dest);
     ++ src->count;
+    if(dest){
+        if(* dest){
+            -- (* dest)->count;
+            manageHeap(*dest);
+        }
+    }
+
     * dest = src;
 }
 
 void assign_heap_null(heap_p* dest){
-    -- (* dest)->count;
-    manageHeap(*dest);
+    if(dest){
+        if(* dest){
+            -- (* dest)->count;
+            manageHeap(*dest);
+        }
+    }
     * dest = NULL;
 }
 
@@ -198,7 +207,7 @@ void free_value(type_value type, pointer_t value){
             break;
         case type_array:
         case type_object:
-            assign_heap_null((heap_p*)value);
+            manageHeap(*(heap_p*)value);
             break;
         case type_args:
             break;
@@ -213,8 +222,8 @@ void free_result(result_t result){
             free(result.value.getString);
             break;
         case type_array:
-            break;
         case type_object:
+            manageHeap(result.value.getHeap);
             break;
         case type_args:
             break;
@@ -223,12 +232,7 @@ void free_result(result_t result){
     }
 }
 
-void assign_result(pointer_t src, result_t* dest, type_value type){
-    if(dest->type == type_string){
-        if(dest->value.getString){
-            free(dest->value.getString);
-        }
-    }
+void assign_result(pointer_t src, result_p dest, type_value type){
     switch(dest->type = type){
         case type_boolean:
             dest->value.getBoolean = *(boolean_t*)src;
@@ -244,10 +248,14 @@ void assign_result(pointer_t src, result_t* dest, type_value type){
             dest->value.getReal = *(real_t*)src;
             break;
         case type_string:
+            if(dest->value.getString){
+                free(dest->value.getString);
+            }
             dest->value.getString = new_wstring(*(wstring_t*)src);
             break;
         case type_array:
         case type_object:
+            manageHeap(dest->value.getHeap);
             dest->value.getHeap = *(heap_p*)src;
             break;
         case type_null:
@@ -326,7 +334,7 @@ void destroyArray(pointer_t _array){
         register uint_t i;
 
         for(i = 0; i < array->length; i++){
-            destroyArray(
+            manageHeap(
                 (*(heap_p*)
                     (array->value + i * array->size)
                 )->memory
@@ -334,6 +342,8 @@ void destroyArray(pointer_t _array){
         }
     }
     free(array->value);
+    free(array);
+    wprintf(L"Free array: %p\n", array);
 }
 
 static heap_p new_array_node(type_value type, size_t size, uint_t length, int dimensions){

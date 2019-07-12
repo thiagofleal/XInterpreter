@@ -25,7 +25,7 @@ typedef char* string_t;
 typedef wchar_t* wstring_t;
 
 typedef struct{
-    uint_t count;
+    int count;
     void (* destroy)(pointer_t);
     pointer_t memory;
 }heap_t, *heap_p;
@@ -351,6 +351,7 @@ typedef enum{
     non_terminated_single_quot,
     non_terminated_double_quot,
     non_terminated_commentary,
+    non_terminated_block,
     undeclared_variable,
     undeclared_function,
     undeclared_attribute,

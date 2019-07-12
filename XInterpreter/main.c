@@ -10,6 +10,7 @@ static wstring_t wstr_error[] = {
         [non_terminated_single_quot] = L"non terminated single quotes",
         [non_terminated_double_quot] = L"non terminated double quotes",
         [non_terminated_commentary] = L"non terminated commentary",
+        [non_terminated_block] = L"non terminated block",
         [undeclared_variable] = L"undeclared variable",
         [undeclared_function] = L"undeclared function",
         [undeclared_attribute] = L"undeclared attribute",
@@ -25,6 +26,7 @@ static wstring_t wstr_error[] = {
         [non_terminated_single_quot] = L"",
         [non_terminated_double_quot] = L"",
         [non_terminated_commentary] = L"",
+        [non_terminated_block] = L"",
         [undeclared_variable] = L"",
         [undeclared_function] = L"",
         [undeclared_attribute] = L"",
@@ -50,6 +52,7 @@ INLINE void printError(type_error error, token_t from, wstring_t message){
         wstr_error[error],
         message
     );
+    exit(EXIT_FAILURE);
 }
 
 INLINE void expectedToken(type_token type, int intern, wstring_t value){

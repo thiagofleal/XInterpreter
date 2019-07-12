@@ -37,7 +37,7 @@ static void declare(variable_p var, type_value type, uint_t identifier, int coun
         ((array_p)heap->memory)->length = 0;
         ((array_p)heap->memory)->value = NULL;
 
-        *(heap_p*)var->value = heap;
+        assign_heap((heap_p*)var->value, heap);
     }
     else{
         var->type = type;
@@ -63,8 +63,11 @@ void declareVariable(pointer_t buf){
             ++ count_var;
 
             if(token->intern == op_assignment){
+                result_t value;
                 ++ token;
-                evaluateAssignment(var[count_var - 1].value, var[count_var - 1].type, expression(buf));
+                value = expression(buf);
+                evaluateAssignment(var[count_var - 1].value, var[count_var - 1].type, value);
+                free_result(value);
                 ++ token;
             }
         }
@@ -140,7 +143,6 @@ void freeVariableMemory(variable_p variable){
 
 static void freeVariable(variable_p variable){
     freeVariableMemory(variable);
-    free_value(variable->type, variable->value);
     free(variable->value);
 }
 

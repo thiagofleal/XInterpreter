@@ -2,8 +2,8 @@
 #include "header.h"
 #include "util/util.h"
 
-extern void findEndOfBlock(void);
-extern result_t getReturn(void);
+extern boolean_t findEndOfBlock(void);
+extern INLINE result_t getReturn(void);
 extern void declareParameters(function_p);
 extern void allocateParameters(function_p, result_t[], uint_t);
 extern uint_t backupVariables(uint_t, variable_p);
@@ -23,7 +23,9 @@ void declareFunction(void){
     expectedToken(tok_punctuation, punctuation(L')'), L")");
     functions[count_functions].enter = ++ token;
     ++ count_functions;
-    findEndOfBlock();
+    if(!findEndOfBlock()){
+        printError(non_terminated_block, *token, NULL);
+    }
 }
 
 function_p findFunction(uint_t identifier, uint_t count_arguments){
