@@ -5,6 +5,8 @@
 #include "header.h"
 #include "util/util.h"
 
+extern heap_p newObject(class_p);
+
 static pointer_t __buf;
 
 INLINE result_t evaluateAssignment(pointer_t value, type_value type, result_t result){
@@ -676,18 +678,39 @@ static result_t term(pointer_t buf){
                             result.value.getHeap = new_array(type, i, length);
                             break;
                         }
-                        case tok_identifier:
-                            // Class
+                        case tok_identifier:{
+                            class_p pclass = findClass(token->intern);
+
+                            if(pclass){
+                                result_t bk = getThis(), r;
+                                result.type = type_object;
+                                result.value.getHeap = newObject(pclass);
+                                setThis(result);
+                                callMethod(pclass, key_constructor, &r, mode_public, buf);
+                                setThis(bk);
+                            }
+                            else{
+                                printError(undeclared_class, *token, NULL);
+                            }
                             break;
+                        }
                         default:
                             printError(syntax_error, *token, NULL);
                     }
                     break;
+                case key_this:
+                    result = getThis();
             }
             break;
         case tok_identifier:
             if((token + 1) -> intern == punctuation(L'(')){
-                callFunction(token, &result, buf);
+                token_p tok = token;
+                int ret = callFunction(tok->intern, &result, buf);
+                if(ret < 1){
+                    wchar_t str[50];
+                    swprintf(str, L"%s(<%d>)", tok->value, -ret);
+                    printError(undeclared_function, *tok, str);
+                }
             }
             else{
                 variable_p variable = findVariable(token->intern);

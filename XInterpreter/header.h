@@ -36,9 +36,7 @@ enum number{
     num_functions = 500,
     num_classes = 200,
     num_attributes = 100,
-    num_methods = 200,
-    num_constructors = 20,
-    num_operators = 100,
+    num_methods = 300,
     num_array_dimensions = 10
 };
 
@@ -327,15 +325,10 @@ typedef struct str_class class_t, *class_p;
 struct str_class{
     uint_t identifier;
     class_p super;
-    int count_constructors;
-    method_t constructor[num_constructors];
-    method_t destructor;
-    int count_attributes;
+    uint_t count_attributes;
     attribute_t attributes[num_attributes];
-    int count_methods;
+    uint_t count_methods;
     method_t methods[num_methods];
-    int count_operators;
-    method_t operators[num_operators];
 };
 
 typedef struct str_object object_t, *object_p;
@@ -381,7 +374,9 @@ extern void declareFunction(void);
 extern void executeBlock(pointer_t);
 extern void preScan(pointer_t);
 extern void executeFunction(function_p, result_t[], uint_t, result_p, pointer_t);
-extern void callFunction(token_p, result_p, pointer_t);
+extern int callFunction(uint_t, result_p, pointer_t);
+extern int callMethod(class_p, uint_t, result_p, visibility_mode, pointer_t);
+extern void declareClass(void);
 
 extern boolean_t assign_value(result_p, pointer_t, type_value);
 extern int swprintr(result_t, wstring_t);
@@ -389,5 +384,9 @@ extern int swprintr(result_t, wstring_t);
 extern result_t expression(pointer_t);
 extern variable_p findVariable(uint_t);
 extern function_p findFunction(uint_t, uint_t);
+extern class_p findClass(uint_t);
+
+void setThis(result_t);
+result_t getThis(void);
 
 #endif // __INTERPRETER_HEADER_H__

@@ -26,6 +26,7 @@ void preScan(pointer_t buf){
                     case key_block:
                         break;
                     case key_class:
+                        declareClass();
                         break;
                     default:
                         printError(syntax_error, * token, NULL);

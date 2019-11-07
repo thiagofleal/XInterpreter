@@ -39,6 +39,7 @@ int wstring_near(wstring_t, wstring_t);
 int swprintr(result_t, wstring_t);
 
 void manageHeap(heap_p);
+void decrement_heap(heap_p*);
 void alloc_heap(heap_p, freeHeap, pointer_t);
 void assign_heap(heap_p*, heap_p);
 void assign_heap_null(heap_p*);

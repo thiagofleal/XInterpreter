@@ -46,7 +46,7 @@ static void declare(variable_p var, type_value type, uint_t identifier, int coun
     }
 }
 
-void declareVariable(pointer_t buf){
+void initializeVariable(pointer_t buf, variable_p mem, uint_t *count){
     uint_t type = token->intern - tok_reserved, dim;
 
     if(type >= type_boolean && type <= type_object){
@@ -57,16 +57,16 @@ void declareVariable(pointer_t buf){
             dim = dimensions();
             ++ token;
             identifier = token->intern;
-            declare(var + count_var, type, identifier, count_dimensions + dim);
+            declare(mem + *count, type, identifier, count_dimensions + dim);
 
             ++ token;
-            ++ count_var;
+            ++ *count;
 
             if(token->intern == op_assignment){
                 result_t value;
                 ++ token;
                 value = expression(buf);
-                evaluateAssignment(var[count_var - 1].value, var[count_var - 1].type, value);
+                evaluateAssignment(mem[*count - 1].value, mem[*count - 1].type, value);
                 free_result(value);
                 ++ token;
             }
@@ -75,6 +75,10 @@ void declareVariable(pointer_t buf){
 
         -- token;
     }
+}
+
+INLINE void declareVariable(pointer_t buf){
+    initializeVariable(buf, var, &count_var);
 }
 
 variable_p findVariable(uint_t identifier){

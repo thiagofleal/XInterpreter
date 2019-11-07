@@ -178,12 +178,16 @@ void manageHeap(heap_p heap){
     }
 }
 
+INLINE void decrement_heap(heap_p* p){
+    -- (*p)->count;
+    manageHeap(*p);
+}
+
 void assign_heap(heap_p *dest, heap_p src){
     ++ src->count;
     if(dest){
         if(* dest){
-            -- (* dest)->count;
-            manageHeap(*dest);
+            decrement_heap(dest);
         }
     }
 
@@ -193,8 +197,7 @@ void assign_heap(heap_p *dest, heap_p src){
 void assign_heap_null(heap_p* dest){
     if(dest){
         if(* dest){
-            -- (* dest)->count;
-            manageHeap(*dest);
+            decrement_heap(dest);
         }
     }
     * dest = NULL;
@@ -330,20 +333,15 @@ void assign_pointer(result_p src, pointer_t dest, type_value type){
 void destroyArray(pointer_t _array){
     array_p array = _array;
 
-    if(array->dimensions > 1){
+    if(array->dimensions > 1 || array->type == type_object){
         register uint_t i;
 
         for(i = 0; i < array->length; i++){
-            manageHeap(
-                (*(heap_p*)
-                    (array->value + i * array->size)
-                )->memory
-            );
+            decrement_heap((heap_p*)(array->value + i * array->size));
         }
     }
     free(array->value);
     free(array);
-    wprintf(L"Free array: %p\n", array);
 }
 
 static heap_p new_array_node(type_value type, size_t size, uint_t length, int dimensions){
@@ -368,9 +366,10 @@ heap_p new_array(type_value type, uint_t dimensions, uint_t length[]){
         heap_p heap = new_array_node(type, sizeof(array_t), *length, dimensions);
 
         for(i = 0; i < *length; i++){
-            *(pointer_t*)
-                (((array_p)heap->memory)->value + i * sizeof(array_t))
-                    = new_array(type, dimensions - 1, length + 1);
+            assign_heap(
+                (heap_p*)(((array_p)heap->memory)->value + i * sizeof(array_t)),
+                new_array(type, dimensions - 1, length + 1)
+            );
         }
 
         return heap;

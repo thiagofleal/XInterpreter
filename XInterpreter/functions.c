@@ -14,18 +14,22 @@ extern void freeVariableMemory(variable_p);
 static uint_t count_functions;
 function_t functions[num_functions];
 
-void declareFunction(void){
-    functions[count_functions].identifier = token->intern;
+void initializeFunction(function_p func){
+    func->identifier = token->intern;
     expectedToken(tok_punctuation, punctuation(L'('), L"(");
     if((token + 1) -> type == tok_reserved){
-        declareParameters(functions + count_functions);
+        declareParameters(func);
     }
     expectedToken(tok_punctuation, punctuation(L')'), L")");
-    functions[count_functions].enter = ++ token;
-    ++ count_functions;
+    func->enter = ++ token;
     if(!findEndOfBlock()){
         printError(non_terminated_block, *token, NULL);
     }
+}
+
+INLINE void declareFunction(void){
+    initializeFunction(functions + count_functions);
+    ++ count_functions;
 }
 
 function_p findFunction(uint_t identifier, uint_t count_arguments){
@@ -94,22 +98,19 @@ void executeFunction(function_p function, result_t args[], uint_t count_args, re
     setExec(True);
 }
 
-void callFunction(token_p identifier, result_p ret, pointer_t buf){
+int callFunction(uint_t identifier, result_p ret, pointer_t buf){
     result_t args[num_args];
     uint_t count_args = 0;
     function_p function = NULL;
 
     expectedToken(tok_punctuation, punctuation(L'('), L"(");
     count_args = getArguments(args, buf);
-    function = findFunction(identifier->intern, count_args);
+    function = findFunction(identifier, count_args);
     expectedToken(tok_punctuation, punctuation(L')'), L")");
 
     if(function){
         executeFunction(function, args, count_args, ret, buf);
+        return 1;
     }
-    else{
-        wchar_t str[50];
-        swprintf(str, L"%s(<%d>)", identifier->value, count_args);
-        printError(undeclared_function, *identifier, str);
-    }
+    return -count_args;
 }
