@@ -683,10 +683,16 @@ static result_t term(pointer_t buf){
 
                             if(pclass){
                                 result_t bk = getThis(), r;
+                                register int ret;
                                 result.type = type_object;
                                 result.value.getHeap = newObject(pclass);
                                 setThis(result);
-                                callMethod(pclass, key_constructor, &r, mode_public, buf);
+                                ret = callMethod(pclass, key_constructor, &r, mode_public, buf);
+                                if(ret < 1){
+                                    wchar_t str[100];
+                                    swprintf(str, L"constructor(<%d>)", -ret);
+                                    printError(undeclared_method, *token, str);
+                                }
                                 setThis(bk);
                             }
                             else{

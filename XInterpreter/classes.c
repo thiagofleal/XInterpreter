@@ -23,11 +23,10 @@ INLINE void initializeMethod(class_p pclass, visibility_mode visibility){
     pclass->methods[pclass->count_methods++].visibility = visibility;
 }
 
-void initializeClass(pointer_t buf, class_p pclass){
+void initializeClass(pointer_t buf, class_p pclass, uint_t identifier){
     visibility_mode current_visibility = mode_public;
 
-    expectedToken(tok_punctuation, punctuation(L':'), L":");
-    pclass->identifier = (++ token)->intern;
+    pclass->identifier = identifier;
     expectedToken(tok_punctuation, punctuation(L'{'), L"{");
 
     while((++ token)->intern != punctuation('}')){
@@ -54,8 +53,8 @@ void initializeClass(pointer_t buf, class_p pclass){
                     case key_public:
                     case key_protected:
                     case key_private:
-                        expectedToken(tok_punctuation, punctuation(L':'), L":");
                         current_visibility = (token->intern - key_public) + mode_public;
+                        expectedToken(tok_punctuation, punctuation(L':'), L":");
                         break;
                     case key_constructor:
                     case key_destructor:
@@ -74,8 +73,11 @@ void initializeClass(pointer_t buf, class_p pclass){
     }
 }
 
-INLINE void declareClass(void){
-    initializeClass(NULL, classes + count_classes);
+void declareClass(void){
+    uint_t identifier;
+    expectedToken(tok_punctuation, punctuation(L':'), L":");
+    identifier = (++ token)->intern;
+    initializeClass(NULL, classes + count_classes, identifier);
     ++ count_classes;
 }
 
