@@ -2,15 +2,6 @@
 #include "header.h"
 #include "util/util.h"
 
-extern boolean_t findEndOfBlock(void);
-extern INLINE result_t getReturn(void);
-extern void declareParameters(function_p);
-extern void allocateParameters(function_p, result_t[], uint_t);
-extern uint_t backupVariables(uint_t, variable_p);
-extern void restaureVariables(variable_p, uint_t);
-extern INLINE void setExec(boolean_t);
-extern void freeVariableMemory(variable_p);
-
 static uint_t count_functions;
 function_t functions[num_functions];
 
@@ -88,7 +79,7 @@ void executeFunction(function_p function, result_t args[], uint_t count_args, re
     allocateParameters(function, args, count_args);
     token = function->enter;
     executeBlock(buf);
-    * ret = getReturn();
+    if(ret) * ret = getReturn();
     destroyVariables(count_vars + function->count_params);
     setCountVariables(global);
     freeParameters(function);

@@ -9,8 +9,6 @@
 #   define INLINE
 #endif // defined
 
-#define __TEST__
-
 #define True 0x1
 #define False 0x0
 
@@ -24,11 +22,13 @@ typedef void* pointer_t;
 typedef char* string_t;
 typedef wchar_t* wstring_t;
 
-typedef struct{
+typedef struct str_heap heap_t, *heap_p;
+
+struct str_heap{
     int count;
-    void (* destroy)(pointer_t);
+    void (* destroy)(heap_p);
     pointer_t memory;
-}heap_t, *heap_p;
+};
 
 enum number{
     num_args = 50,
@@ -375,7 +375,7 @@ extern void executeBlock(pointer_t);
 extern void preScan(pointer_t);
 extern void executeFunction(function_p, result_t[], uint_t, result_p, pointer_t);
 extern int callFunction(uint_t, result_p, pointer_t);
-extern int callMethod(class_p, uint_t, result_p, visibility_mode, pointer_t);
+extern int callMethod(result_p, uint_t, result_p, visibility_mode, pointer_t);
 extern void declareClass(void);
 
 extern boolean_t assign_value(result_p, pointer_t, type_value);
@@ -385,8 +385,24 @@ extern result_t expression(pointer_t);
 extern variable_p findVariable(uint_t);
 extern function_p findFunction(uint_t, uint_t);
 extern class_p findClass(uint_t);
+extern attribute_p findAttribute(object_p, uint_t, visibility_mode);
 
-void setThis(result_t);
-result_t getThis(void);
+extern void pushThis(result_p);
+extern void popThis(void);
+extern INLINE result_p getThis(void);
+
+extern void initializeFunction(function_p);
+extern void initializeVariable(pointer_t, pointer_t, uint_t*, size_t);
+extern void freeVariableMemory(variable_p);
+extern void declareParameters(function_p);
+extern void allocateParameters(function_p, result_t[], uint_t);
+extern void restaureVariables(variable_p, uint_t);
+extern void setExec(boolean_t);
+extern boolean_t findEndOfBlock(void);
+extern uint_t getArguments(result_t[], pointer_t);
+extern uint_t backupVariables(uint_t, variable_p);
+extern heap_p newObject(class_p);
+extern result_t getReturn(void);
+extern result_t evaluateAssignment(pointer_t, type_value, result_t);
 
 #endif // __INTERPRETER_HEADER_H__

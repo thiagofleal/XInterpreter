@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include <assert.h>
 #include "util.h"
 
 const size_t size_type[] = {
@@ -18,7 +17,7 @@ const size_t size_type[] = {
 
 list new_list(void){
     list ret = malloc(sizeof(list_t));
-    assert(ret);
+    check(ret);
     ret->size = 0;
     return ret;
 }
@@ -40,7 +39,7 @@ static node_t *list_end(list l){
 
 static node_t *new_node(pointer_t value){
     node_t *node = malloc(sizeof(node_t));
-    assert(node);
+    check(node);
     node->next = NULL;
     node->value = value;
     return node;
@@ -106,10 +105,12 @@ int list_search(list l, pointer_t value, size_t size){
 }
 
 void __check_fail__(string_t error, string_t file, int line){
-    fprintf(stderr, "%s [%s => %i]\n", error, file, line);
+    #ifdef DEBUG
+    fprintf(stderr, " ** ASSERT TEST FAILED **\n\t[TEST] => \"%s\"\n\t[FILE] => %s\n\t[LINE] => %i\n", error, file, line);
     if(errno){
-        fprintf(stderr, "errno: [%s]\n", strerror(errno));
+        fprintf(stderr, "\t[ERROR CODE] => %i\n\t[STRING ERROR] => %s\n", errno, strerror(errno));
     }
+    #endif // DEBUG
     exit(EXIT_FAILURE);
 }
 
@@ -239,32 +240,32 @@ void assign_result(pointer_t src, result_p dest, type_value type){
     switch(dest->type = type){
         case type_boolean:
             dest->value.getBoolean = *(boolean_t*)src;
-            break;
+            return;
         case type_character:
             dest->value.getReal = (real_t)*(character_t*)src;
-            break;
+            return;
         case type_integer:
             dest->type = type_real;
             dest->value.getReal = (real_t)*(integer_t*)src;
-            break;
+            return;
         case type_real:
             dest->value.getReal = *(real_t*)src;
-            break;
+            return;
         case type_string:
             if(dest->value.getString){
                 free(dest->value.getString);
             }
             dest->value.getString = new_wstring(*(wstring_t*)src);
-            break;
+            return;
         case type_array:
         case type_object:
             manageHeap(dest->value.getHeap);
             dest->value.getHeap = *(heap_p*)src;
-            break;
+            return;
         case type_null:
-            break;
+            return;
         default:
-            break;
+            return;
     }
 }
 
@@ -330,8 +331,8 @@ void assign_pointer(result_p src, pointer_t dest, type_value type){
     }
 }
 
-void destroyArray(pointer_t _array){
-    array_p array = _array;
+void destroyArray(heap_p heap){
+    array_p array = heap->memory;
 
     if(array->dimensions > 1 || array->type == type_object){
         register uint_t i;

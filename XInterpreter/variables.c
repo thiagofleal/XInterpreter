@@ -3,8 +3,6 @@
 #include "header.h"
 #include "util/util.h"
 
-extern INLINE result_t evaluateAssignment(pointer_t, type_value, result_t);
-
 static uint_t count_var;
 variable_t var[num_variables];
 
@@ -19,7 +17,7 @@ static uint_t dimensions(void){
 }
 
 static void declare(variable_p var, type_value type, uint_t identifier, int count_dimensions){
-    var->identifier = token->intern;
+    var->identifier = identifier;
     if(count_dimensions){
         heap_p heap = malloc(sizeof(heap_t));
         var->type = type_array;
@@ -46,7 +44,7 @@ static void declare(variable_p var, type_value type, uint_t identifier, int coun
     }
 }
 
-void initializeVariable(pointer_t buf, variable_p mem, uint_t *count){
+void initializeVariable(pointer_t buf, pointer_t mem, uint_t *count, size_t size){
     uint_t type = token->intern - tok_reserved, dim;
 
     if(type >= type_boolean && type <= type_object){
@@ -57,7 +55,7 @@ void initializeVariable(pointer_t buf, variable_p mem, uint_t *count){
             dim = dimensions();
             ++ token;
             identifier = token->intern;
-            declare(mem + *count, type, identifier, count_dimensions + dim);
+            declare(mem + (*count * size), type, identifier, count_dimensions + dim);
 
             ++ token;
             ++ *count;
@@ -66,7 +64,7 @@ void initializeVariable(pointer_t buf, variable_p mem, uint_t *count){
                 result_t value;
                 ++ token;
                 value = expression(buf);
-                evaluateAssignment(mem[*count - 1].value, mem[*count - 1].type, value);
+                evaluateAssignment(((variable_p)(mem + *count - 1))->value, ((variable_p)(mem + *count - 1))->type, value);
                 free_result(value);
                 ++ token;
             }
@@ -78,7 +76,7 @@ void initializeVariable(pointer_t buf, variable_p mem, uint_t *count){
 }
 
 INLINE void declareVariable(pointer_t buf){
-    initializeVariable(buf, var, &count_var);
+    initializeVariable(buf, var, &count_var, sizeof(variable_t));
 }
 
 variable_p findVariable(uint_t identifier){

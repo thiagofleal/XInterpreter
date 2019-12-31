@@ -3,20 +3,8 @@
 #include "header.h"
 #include "util/util.h"
 
-extern boolean_t findEndOfBlock(void);
-extern INLINE result_t getReturn(void);
-extern void declareParameters(function_p);
-extern void allocateParameters(function_p, result_t[], uint_t);
-extern uint_t backupVariables(uint_t, variable_p);
-extern void restaureVariables(variable_p, uint_t);
-extern void initializeVariable(pointer_t, variable_p, uint_t*);
-extern void initializeFunction(function_p);
-extern void freeVariableMemory(variable_p);
-extern uint_t getArguments(result_t[], pointer_t);
-
 static uint_t count_classes;
 static class_t classes[num_classes];
-static result_t this_object;
 
 INLINE void initializeMethod(class_p pclass, visibility_mode visibility){
     initializeFunction((function_p)(pclass->methods + pclass->count_methods));
@@ -40,7 +28,7 @@ void initializeClass(pointer_t buf, class_p pclass, uint_t identifier){
                     case key_string:
                     case key_object:{
                         uint_t count = pclass->count_attributes;
-                        initializeVariable(buf, (variable_p)pclass->attributes, &count);
+                        initializeVariable(buf, pclass->attributes, &count, sizeof(attribute_t));
                         expectedToken(tok_punctuation, punctuation(L';'), L";");
                         while(pclass->count_attributes < count){
                             pclass->attributes[pclass->count_attributes].visibility = current_visibility;
@@ -91,9 +79,15 @@ class_p findClass(uint_t id){
     return NULL;
 }
 
-void deleteInstance(pointer_t instance){
-    object_p object = instance;
+void deleteInstance(heap_p heap){
+    object_p object = heap->memory;
     register uint_t i;
+    result_t r = {
+        .type = type_object,
+        .value.getHeap = heap
+    };
+
+    callMethod(&r, key_destructor, NULL, mode_public, NULL);
 
     for(i = 0; i < object->pclass->count_attributes; i++){
         freeVariableMemory((variable_p)object->pclass->attributes + i);
@@ -117,6 +111,30 @@ object_p instanceClass(class_p pclass){
 
         for(i = 0; i < pclass->count_attributes; i++){
             memcpy(object->attributes + i, pclass->attributes + i, sizeof(attribute_t));
+            object->attributes[i].super.value = malloc(size_type[pclass->attributes[i].super.type]);
+            check(object->attributes[i].super.value);
+
+            switch(pclass->attributes[i].super.type){
+                case type_string:
+                    *(wstring_t*)object->attributes[i].super.value = new_wstring(
+                        pclass->attributes[i].super.value
+                    );
+                    break;
+                case type_object:
+                case type_array:
+                    assign_heap(
+                        (heap_p*)object->attributes[i].super.value,
+                        *(heap_p*)pclass->attributes[i].super.value
+                    );
+                    break;
+                default:
+                    memcpy(
+                        object->attributes[i].super.value,
+                        pclass->attributes[i].super.value,
+                        size_type[pclass->attributes[i].super.type]
+                    );
+                    break;
+            }
         }
 
         return object;
@@ -134,12 +152,40 @@ heap_p newObject(class_p pclass){
     return heap;
 }
 
-INLINE void setThis(result_t value){
-    this_object = value;
+static struct str_stack {
+    result_p value;
+    struct str_stack *prev;
+} *this_stack = NULL;
+
+void pushThis(result_p value){
+    struct str_stack *node = malloc(sizeof(struct str_stack));
+    check(node);
+    node->value = value;
+    node->prev = this_stack;
+    this_stack = node;
 }
 
-INLINE result_t getThis(void){
-    return this_object;
+void popThis(void){
+    struct str_stack *node = this_stack;
+    this_stack = node->prev;
+    free(node);
+}
+
+INLINE result_p getThis(void){
+    return this_stack->value;
+}
+
+attribute_p findAttribute(object_p object, uint_t identifier, visibility_mode access){
+    register int i;
+    class_p pclass = object->pclass;
+    for(i = pclass->count_attributes - 1; i >= 0; i--){
+        if(access >= pclass->attributes[i].visibility){
+            if(pclass->attributes[i].super.identifier == identifier){
+                return object->attributes + i;
+            }
+        }
+    }
+    return NULL;
 }
 
 method_p findMethod(class_p pclass, uint_t id, uint_t count_arguments, visibility_mode access){
@@ -159,7 +205,6 @@ method_p findMethod(class_p pclass, uint_t id, uint_t count_arguments, visibilit
             }
         }
     }
-
     return NULL;
 }
 
@@ -167,18 +212,25 @@ INLINE method_p findConstructor(class_p pclass, uint_t num_arguments, visibility
     return findMethod(pclass, key_constructor, num_arguments, access_mode);
 }
 
-int callMethod(class_p pclass, uint_t identifier, result_p ret, visibility_mode access, pointer_t buf){
+int callMethod(result_p src, uint_t identifier, result_p ret, visibility_mode access, pointer_t buf){
     result_t args[num_args];
     uint_t count_args = 0;
-    method_p method = NULL;
+    function_p method = NULL;
+    heap_p heap = src->value.getHeap;
+    object_p object = heap->memory;
+
+    check(object);
 
     expectedToken(tok_punctuation, punctuation(L'('), L"(");
     count_args = getArguments(args, buf);
-    method = findMethod(pclass, identifier, count_args, access);
     expectedToken(tok_punctuation, punctuation(L')'), L")");
+    method = (function_p)findMethod(object->pclass, identifier, count_args, access);
 
     if(method){
-        executeFunction((function_p)method, args, count_args, ret, buf);
+        pushThis(src);
+        executeFunction(method, args, count_args, ret, buf);
+        popThis();
+        manageHeap(heap);
         return 1;
     }
     return -count_args;

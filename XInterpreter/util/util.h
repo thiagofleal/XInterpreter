@@ -5,7 +5,7 @@
 
 typedef struct node node_t;
 
-typedef void (* freeHeap)(pointer_t);
+typedef void (* freeHeap)(heap_p);
 
 struct node{
     pointer_t value;
@@ -28,7 +28,7 @@ int list_search(list, pointer_t, size_t);
 
 extern void __check_fail__(string_t, string_t, int);
 
-#define check(t) ((t) ? (void)0 : __check_fail__("\rcheck fail: \"" # t "\"", __FILE__, __LINE__))
+#define check(t)    ((t) ? (void)0 : __check_fail__(#t, __FILE__, __LINE__))
 
 INLINE string_t new_string(char[]);
 INLINE wstring_t new_wstring(wchar_t[]);

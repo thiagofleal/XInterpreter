@@ -5,9 +5,8 @@
 #include "header.h"
 #include "util/util.h"
 
-extern heap_p newObject(class_p);
-
 static pointer_t __buf;
+static visibility_mode current_mode;
 
 INLINE result_t evaluateAssignment(pointer_t value, type_value type, result_t result){
     assign_pointer(&result, value, type);
@@ -587,6 +586,35 @@ static void brackets(result_p result, result_t element, pointer_t value, type_va
     }
 }
 
+static void assignVariable(variable_p variable, result_p result){
+    assign_result(variable->value, result, variable->type);
+    assign_value(result, variable->value, variable->type);
+}
+
+static void dot(result_p result, pointer_t buf){
+    if(result->type == type_object){
+        if((token + 1)->intern == punctuation(L'(')){
+            token_p tok = token;
+            int ret = callMethod(result, tok->intern, result, current_mode, buf);
+            if(ret < 1) {
+                wchar_t msg[50];
+                swprintf(msg, L"%s(<%i>)", tok->value, -ret);
+                printError(undeclared_method, *tok, msg);
+            }
+        }
+        else {
+            heap_p heap = result->value.getHeap;
+            object_p object = heap->memory;
+            attribute_p attr = findAttribute(object, token->intern, current_mode);
+            if(!attr){
+                printError(undeclared_attribute, *token, token->value);
+                exit(EXIT_FAILURE);
+            }
+            assignVariable((variable_p)attr, result);
+        }
+    }
+}
+
 boolean_t assign_value(result_p result, pointer_t value, type_value type){
     if((token + 1) -> type == tok_operator){
         switch((++ token) -> intern){
@@ -630,6 +658,10 @@ boolean_t assign_value(result_p result, pointer_t value, type_value type){
             case op_radix_assignment:
                 ++ token;
                 *result = evaluateRadixAssignment(value, type, expression(__buf));
+                return True;
+            case op_dot:
+                ++ token;
+                dot(result, __buf);
                 return True;
             case op_bracket_open:
                 ++ token;
@@ -682,18 +714,16 @@ static result_t term(pointer_t buf){
                             class_p pclass = findClass(token->intern);
 
                             if(pclass){
-                                result_t bk = getThis(), r;
                                 register int ret;
+                                wstring_t name = token->value;
                                 result.type = type_object;
-                                result.value.getHeap = newObject(pclass);
-                                setThis(result);
-                                ret = callMethod(pclass, key_constructor, &r, mode_public, buf);
+                                assign_heap(&result.value.getHeap, newObject(pclass));
+                                ret = callMethod(&result, key_constructor, NULL, mode_public, buf);
                                 if(ret < 1){
                                     wchar_t str[100];
-                                    swprintf(str, L"constructor(<%d>)", -ret);
+                                    swprintf(str, L"%s.constructor(<%d>)", name, -ret);
                                     printError(undeclared_method, *token, str);
                                 }
-                                setThis(bk);
                             }
                             else{
                                 printError(undeclared_class, *token, NULL);
@@ -705,7 +735,9 @@ static result_t term(pointer_t buf){
                     }
                     break;
                 case key_this:
-                    result = getThis();
+                    result = *getThis();
+                    current_mode = mode_private;
+                    assign_value(&result, result.value.getHeap, result.type);
             }
             break;
         case tok_identifier:
@@ -720,13 +752,11 @@ static result_t term(pointer_t buf){
             }
             else{
                 variable_p variable = findVariable(token->intern);
-
                 if(!variable){
                     printError(undeclared_variable, *token, token->value);
                     exit(EXIT_FAILURE);
                 }
-                assign_result(variable->value, &result, variable->type);
-                assign_value(&result, variable->value, variable->type);
+                assignVariable(variable, &result);
             }
             break;
         case tok_punctuation:
@@ -814,6 +844,7 @@ result_t expression(pointer_t buf){
     wchar_t str[100];
 
     __buf = buf;
+    current_mode = mode_public;
     if(!setjmp(buf)){
         swprintf(str, L"<%s> ", token->value);
         evaluateMultiPurpose(&result);
