@@ -76,7 +76,6 @@ int executeCommand(pointer_t buf){
         case key_using:
             break;
         case key_return:
-            //++ token;
             executeReturn(buf);
             return 0;
         case key_call:

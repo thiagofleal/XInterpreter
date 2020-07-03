@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <setjmp.h>
 #include "header.h"
 #include "util/util.h"
 
@@ -82,15 +83,25 @@ class_p findClass(uint_t id){
 void deleteInstance(heap_p heap){
     object_p object = heap->memory;
     register uint_t i;
-    result_t r = {
-        .type = type_object,
-        .value.getHeap = heap
-    };
+    result_t args[num_args];
+    function_p destruct = (function_p)findMethod(object->pclass, key_destructor, 0, mode_public);
+    result_t res = { .type = type_object, .value = { .getHeap = heap } };
+    jmp_buf buf;
 
-    callMethod(&r, key_destructor, NULL, mode_public, NULL);
+    if(!destruct){
+        printError(undeclared_method, *token, L"destructor(<0>)");
+    }
+
+    ++ heap->count;
+    pushThis(&res);
+    if(!setjmp(buf)){
+        executeFunction(destruct, args, 0, NULL, buf);
+    }
+    popThis();
+    -- heap->count;
 
     for(i = 0; i < object->pclass->count_attributes; i++){
-        freeVariableMemory((variable_p)object->pclass->attributes + i);
+        freeVariableMemory((variable_p)(object->pclass->attributes + i));
     }
     free(object->pclass->attributes);
     free(object);
@@ -228,9 +239,10 @@ int callMethod(result_p src, uint_t identifier, result_p ret, visibility_mode ac
 
     if(method){
         pushThis(src);
+        ++ heap->count;
         executeFunction(method, args, count_args, ret, buf);
+        -- heap->count;
         popThis();
-        manageHeap(heap);
         return 1;
     }
     return -count_args;

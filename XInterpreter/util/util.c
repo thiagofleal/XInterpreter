@@ -172,7 +172,7 @@ void manageHeap(heap_p heap){
     if(heap){
         if(! heap->count){
             if(heap->destroy){
-                heap->destroy(heap->memory);
+                heap->destroy(heap);
                 heap->memory = NULL;
             }
         }

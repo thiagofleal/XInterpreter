@@ -404,5 +404,6 @@ extern uint_t backupVariables(uint_t, variable_p);
 extern heap_p newObject(class_p);
 extern result_t getReturn(void);
 extern result_t evaluateAssignment(pointer_t, type_value, result_t);
+extern method_p findMethod(class_p, uint_t, uint_t, visibility_mode);
 
 #endif // __INTERPRETER_HEADER_H__

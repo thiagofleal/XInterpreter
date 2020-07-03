@@ -593,6 +593,7 @@ static void assignVariable(variable_p variable, result_p result){
 
 static void dot(result_p result, pointer_t buf){
     if(result->type == type_object){
+        heap_p heap = result->value.getHeap;
         if((token + 1)->intern == punctuation(L'(')){
             token_p tok = token;
             int ret = callMethod(result, tok->intern, result, current_mode, buf);
@@ -612,6 +613,7 @@ static void dot(result_p result, pointer_t buf){
             }
             assignVariable((variable_p)attr, result);
         }
+        manageHeap(heap);
     }
 }
 
@@ -715,13 +717,12 @@ static result_t term(pointer_t buf){
 
                             if(pclass){
                                 register int ret;
-                                wstring_t name = token->value;
                                 result.type = type_object;
-                                assign_heap(&result.value.getHeap, newObject(pclass));
+                                result.value.getHeap = newObject(pclass);
                                 ret = callMethod(&result, key_constructor, NULL, mode_public, buf);
                                 if(ret < 1){
                                     wchar_t str[100];
-                                    swprintf(str, L"%s.constructor(<%d>)", name, -ret);
+                                    swprintf(str, L"constructor(<%d>)", -ret);
                                     printError(undeclared_method, *token, str);
                                 }
                             }
