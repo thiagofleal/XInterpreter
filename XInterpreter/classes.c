@@ -7,6 +7,8 @@
 static uint_t count_classes;
 static class_t classes[num_classes];
 
+class_p getClass(void);
+
 INLINE void initializeMethod(class_p pclass, visibility_mode visibility){
     initializeFunction((function_p)(pclass->methods + pclass->count_methods));
     pclass->methods[pclass->count_methods++].visibility = visibility;
@@ -38,6 +40,9 @@ void initializeClass(pointer_t buf, class_p pclass, uint_t identifier){
                         break;
                     }
                     case key_extend:
+                        expectedToken(tok_punctuation, punctuation(L':'), L":");
+                        pclass->super = getClass();
+                        expectedToken(tok_punctuation, punctuation(L';'), L";");
                         break;
                     case key_public:
                     case key_protected:
@@ -80,22 +85,27 @@ class_p findClass(uint_t id){
     return NULL;
 }
 
+class_p getClass(void){
+    ++ token;
+    return findClass(token->intern);
+}
+
 void deleteInstance(heap_p heap){
     object_p object = heap->memory;
     register uint_t i;
     result_t args[num_args];
-    function_p destruct = (function_p)findMethod(object->pclass, key_destructor, 0, mode_public);
+    function_p destruct = (function_p)findMethod(object->pclass, key_destructor, 0, mode_public, NULL);
     result_t res = { .type = type_object, .value = { .getHeap = heap } };
-    jmp_buf buf;
+    static jmp_buf buf;
 
     if(!destruct){
         printError(undeclared_method, *token, L"destructor(<0>)");
     }
 
     ++ heap->count;
-    pushThis(&res);
+    pushThis(res);
     if(!setjmp(buf)){
-        executeFunction(destruct, args, 0, NULL, buf);
+        executeFunction(destruct, args, 0, &res, buf);
     }
     popThis();
     -- heap->count;
@@ -104,18 +114,24 @@ void deleteInstance(heap_p heap){
         freeVariableMemory((variable_p)(object->pclass->attributes + i));
     }
     free(object->pclass->attributes);
+    if(object->super->memory){
+        assign_heap_null(&object->super);
+    }
     free(object);
 }
 
-object_p instanceClass(class_p pclass){
+heap_p instanceClass(class_p pclass){
+    heap_p heap = malloc(sizeof(heap_t));
+    object_p object = NULL;
+
     if(pclass){
-        object_p object = malloc(sizeof(object_t));
         register uint_t i;
 
+        object = calloc(1, sizeof(object_t));
         check(object);
 
         object->pclass = pclass;
-        object->super = instanceClass(pclass->super);
+        assign_heap(&object->super, instanceClass(pclass->super));
         object->attributes = malloc(pclass->count_attributes * sizeof(attribute_t));
 
         check(object->attributes);
@@ -147,28 +163,20 @@ object_p instanceClass(class_p pclass){
                     break;
             }
         }
-
-        return object;
     }
-    return NULL;
-}
 
-heap_p newObject(class_p pclass){
-    heap_p heap = malloc(sizeof(heap_t));
-    object_p object = instanceClass(pclass);
-
-    check(heap && object);
+    check(heap);
 
     alloc_heap(heap, deleteInstance, object);
     return heap;
 }
 
 static struct str_stack {
-    result_p value;
+    result_t value;
     struct str_stack *prev;
 } *this_stack = NULL;
 
-void pushThis(result_p value){
+void pushThis(result_t value){
     struct str_stack *node = malloc(sizeof(struct str_stack));
     check(node);
     node->value = value;
@@ -182,8 +190,15 @@ void popThis(void){
     free(node);
 }
 
-INLINE result_p getThis(void){
+INLINE result_t getThis(void){
     return this_stack->value;
+}
+
+result_t getBase(void){
+    result_t r = getThis();
+    object_p object = r.value.getHeap->memory;
+    r.value.getHeap = object->super;
+    return r;
 }
 
 attribute_p findAttribute(object_p object, uint_t identifier, visibility_mode access){
@@ -196,10 +211,16 @@ attribute_p findAttribute(object_p object, uint_t identifier, visibility_mode ac
             }
         }
     }
+    if(pclass->super){
+        if(access == mode_private){
+            access = mode_protected;
+        }
+        return findAttribute(object->super->memory, identifier, access);
+    }
     return NULL;
 }
 
-method_p findMethod(class_p pclass, uint_t id, uint_t count_arguments, visibility_mode access){
+method_p findMethod(class_p pclass, uint_t id, uint_t count_arguments, visibility_mode access, uint_t *subs){
     register int i;
 
     for(i = pclass->count_methods - 1; i >= 0; i--){
@@ -216,11 +237,20 @@ method_p findMethod(class_p pclass, uint_t id, uint_t count_arguments, visibilit
             }
         }
     }
+    if(pclass->super){
+        if(access == mode_private){
+            access = mode_protected;
+        }
+        if(subs){
+            ++ *subs;
+        }
+        return findMethod(pclass->super, id, count_arguments, access, subs);
+    }
     return NULL;
 }
 
-INLINE method_p findConstructor(class_p pclass, uint_t num_arguments, visibility_mode access_mode){
-    return findMethod(pclass, key_constructor, num_arguments, access_mode);
+INLINE method_p findConstructor(class_p pclass, uint_t num_arguments, visibility_mode access_mode, uint_t *subs){
+    return findMethod(pclass, key_constructor, num_arguments, access_mode, subs);
 }
 
 int callMethod(result_p src, uint_t identifier, result_p ret, visibility_mode access, pointer_t buf){
@@ -229,16 +259,25 @@ int callMethod(result_p src, uint_t identifier, result_p ret, visibility_mode ac
     function_p method = NULL;
     heap_p heap = src->value.getHeap;
     object_p object = heap->memory;
+    uint_t subs = 0;
 
     check(object);
 
     expectedToken(tok_punctuation, punctuation(L'('), L"(");
     count_args = getArguments(args, buf);
     expectedToken(tok_punctuation, punctuation(L')'), L")");
-    method = (function_p)findMethod(object->pclass, identifier, count_args, access);
+    method = (function_p)findMethod(object->pclass, identifier, count_args, access, &subs);
 
     if(method){
-        pushThis(src);
+        register uint_t i;
+        result_t r = *src;
+
+        for(i = 0; i < subs; i++){
+            heap = (heap_p)((object_p)heap->memory)->super;
+        }
+
+        r.value.getHeap = heap;
+        pushThis(r);
         ++ heap->count;
         executeFunction(method, args, count_args, ret, buf);
         -- heap->count;

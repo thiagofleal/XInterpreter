@@ -5,6 +5,8 @@
 #include "header.h"
 #include "util/util.h"
 
+extern class_p getClass(void);
+
 static pointer_t __buf;
 static visibility_mode current_mode;
 
@@ -604,7 +606,6 @@ static void dot(result_p result, pointer_t buf){
             }
         }
         else {
-            heap_p heap = result->value.getHeap;
             object_p object = heap->memory;
             attribute_p attr = findAttribute(object, token->intern, current_mode);
             if(!attr){
@@ -713,12 +714,15 @@ static result_t term(pointer_t buf){
                             break;
                         }
                         case tok_identifier:{
-                            class_p pclass = findClass(token->intern);
+                            class_p pclass;
+
+                            -- token;
+                            pclass = getClass();
 
                             if(pclass){
                                 register int ret;
                                 result.type = type_object;
-                                result.value.getHeap = newObject(pclass);
+                                result.value.getHeap = instanceClass(pclass);
                                 ret = callMethod(&result, key_constructor, NULL, mode_public, buf);
                                 if(ret < 1){
                                     wchar_t str[100];
@@ -736,8 +740,13 @@ static result_t term(pointer_t buf){
                     }
                     break;
                 case key_this:
-                    result = *getThis();
+                    result = getThis();
                     current_mode = mode_private;
+                    assign_value(&result, result.value.getHeap, result.type);
+                    break;
+                case key_base:
+                    result = getBase();
+                    current_mode = mode_protected;
                     assign_value(&result, result.value.getHeap, result.type);
             }
             break;

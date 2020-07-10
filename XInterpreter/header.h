@@ -334,7 +334,7 @@ struct str_class{
 typedef struct str_object object_t, *object_p;
 
 struct str_object{
-    object_p super;
+    heap_p super;
     class_p pclass;
     attribute_p attributes;
 };
@@ -387,9 +387,10 @@ extern function_p findFunction(uint_t, uint_t);
 extern class_p findClass(uint_t);
 extern attribute_p findAttribute(object_p, uint_t, visibility_mode);
 
-extern void pushThis(result_p);
+extern void pushThis(result_t);
 extern void popThis(void);
-extern INLINE result_p getThis(void);
+extern INLINE result_t getThis(void);
+extern INLINE result_t getBase(void);
 
 extern void initializeFunction(function_p);
 extern void initializeVariable(pointer_t, pointer_t, uint_t*, size_t);
@@ -401,9 +402,9 @@ extern void setExec(boolean_t);
 extern boolean_t findEndOfBlock(void);
 extern uint_t getArguments(result_t[], pointer_t);
 extern uint_t backupVariables(uint_t, variable_p);
-extern heap_p newObject(class_p);
+extern heap_p instanceClass(class_p);
 extern result_t getReturn(void);
 extern result_t evaluateAssignment(pointer_t, type_value, result_t);
-extern method_p findMethod(class_p, uint_t, uint_t, visibility_mode);
+extern method_p findMethod(class_p, uint_t, uint_t, visibility_mode, uint_t*);
 
 #endif // __INTERPRETER_HEADER_H__

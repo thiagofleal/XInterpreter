@@ -61,10 +61,8 @@ void initializeVariable(pointer_t buf, pointer_t mem, uint_t *count, size_t size
             ++ *count;
 
             if(token->intern == op_assignment){
-                result_t value;
                 -- token;
-                value = expression(buf);
-                free_result(value);
+                free_result(expression(buf));
                 ++ token;
             }
         }
