@@ -851,12 +851,10 @@ static void evaluateValue(result_t*);
 result_t expression(pointer_t buf){
     result_t result;
     pointer_t backup = __buf;
-    wchar_t str[100];
 
     __buf = buf;
     current_mode = mode_public;
     if(!setjmp(buf)){
-        swprintf(str, L"<%s> ", token->value);
         evaluateMultiPurpose(&result);
     }
     __buf = backup;

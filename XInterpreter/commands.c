@@ -288,11 +288,11 @@ static void executeFor(pointer_t buf){
 }
 
 static void executeReturn(pointer_t buf){
-    exec = False;
     if((token + 1)->intern == punctuation(L':')){
         ++ token; ++ token;
         free_result(current_return);
         current_return = expression(buf);
     }
     expectedToken(tok_punctuation, punctuation(L';'), L";");
+    exec = False;
 }
