@@ -174,7 +174,7 @@ heap_p instanceClass(class_p pclass){
 static struct str_stack {
     result_t value;
     struct str_stack *prev;
-} *this_stack = NULL;
+} *this_stack = NULL, *virtual_stack = NULL;
 
 void pushThis(result_t value){
     struct str_stack *node = malloc(sizeof(struct str_stack));
@@ -190,6 +190,20 @@ void popThis(void){
     free(node);
 }
 
+void pushVirtual(result_t value){
+    struct str_stack *node = malloc(sizeof(struct str_stack));
+    check(node);
+    node->value = value;
+    node->prev = virtual_stack;
+    virtual_stack = node;
+}
+
+void popVirtual(void){
+    struct str_stack *node = virtual_stack;
+    virtual_stack = node->prev;
+    free(node);
+}
+
 INLINE result_t getThis(void){
     return this_stack->value;
 }
@@ -199,6 +213,10 @@ result_t getBase(void){
     object_p object = r.value.getHeap->memory;
     r.value.getHeap = object->super;
     return r;
+}
+
+INLINE result_t getVirtual(void){
+    return virtual_stack->value;
 }
 
 attribute_p findAttribute(object_p object, uint_t identifier, visibility_mode access){
@@ -277,11 +295,13 @@ int callMethod(result_p src, uint_t identifier, result_p ret, visibility_mode ac
         }
 
         r.value.getHeap = heap;
+        pushVirtual(*src);
         pushThis(r);
         ++ heap->count;
         executeFunction(method, args, count_args, ret, buf);
         -- heap->count;
         popThis();
+        popVirtual();
         return 1;
     }
     return -count_args;

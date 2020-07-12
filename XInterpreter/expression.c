@@ -748,6 +748,10 @@ static result_t term(pointer_t buf){
                     result = getBase();
                     current_mode = mode_protected;
                     assign_value(&result, result.value.getHeap, result.type);
+                case key_virtual:
+                    result = getVirtual();
+                    current_mode = mode_public;
+                    assign_value(&result, result.value.getHeap, result.type);
             }
             break;
         case tok_identifier:

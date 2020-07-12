@@ -389,8 +389,11 @@ extern attribute_p findAttribute(object_p, uint_t, visibility_mode);
 
 extern void pushThis(result_t);
 extern void popThis(void);
+extern void pushVirtual(result_t);
+extern void popVirtual(void);
 extern INLINE result_t getThis(void);
 extern INLINE result_t getBase(void);
+extern INLINE result_t getVirtual(void);
 
 extern void initializeFunction(function_p);
 extern void initializeVariable(pointer_t, pointer_t, uint_t*, size_t);
